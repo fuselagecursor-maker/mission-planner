@@ -1,0 +1,17 @@
+---
+description: Use D drive for all installs, caches, and tooling in this project
+alwaysApply: true
+---
+
+# D drive only (this machine)
+
+This workspace is configured so development tooling does **not** use `C:\` for large caches or SDK installs.
+
+- **Pub / Dart**: `D:\dev\pub-cache` (`PUB_CACHE`)
+- **Android**: `D:\dev\android-sdk` (`ANDROID_HOME` / `ANDROID_SDK_ROOT`); AVDs: `D:\dev\android-avd` (`ANDROID_AVD_HOME`)
+- **Java / Gradle**: JDK at `D:\dev\jdk-17.0.18.8-hotspot` (`JAVA_HOME`); caches at `D:\dev\.gradle` (`GRADLE_USER_HOME`)
+- **Flutter** is on `D:\flutter`; `flutter config` has `android-sdk` and `jdk-dir` set under `D:\dev\...`
+- **Temp for installers/CLI** is preferentially `D:\dev\temp` (`TEMP` / `TMP` user scope)
+- **Node** global prefix: `D:\dev\npm`; **Python pip** cache: `D:\dev\pip-cache` (`PIP_CACHE_DIR`); **Rust** (if installed): `CARGO_HOME` / `RUSTUP_HOME` under `D:\dev\...`; **Go** workspace: `D:\dev\go` (`GOPATH`); **NuGet**: `D:\dev\nuget-packages`
+
+When running installs (npm, pip, `dart pub`, Android components, choco, winget, etc.), prefer **paths and flags that target `D:\`**; do not recreate caches on `C:\` unless the user clearly opts in. Do not add a second `pub-cache` or Gradle home inside the project unless asked.
