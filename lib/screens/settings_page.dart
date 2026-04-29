@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/gcs_tokens.dart';
+import '../core/settings/app_settings_controller.dart';
 import '../core/theme/theme_controller.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -9,22 +9,30 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeScope.of(context);
+    final settings = SettingsScope.of(context);
+    final scheme = Theme.of(context).colorScheme;
     return _TacticalPageScaffold(
       title: 'Settings',
       child: Container(
         decoration: BoxDecoration(
-          color: GcsColors.bgPanel.withValues(alpha: 0.92),
-          borderRadius: BorderRadius.circular(GcsLayout.radius),
-          border: Border.all(color: GcsColors.border),
-          boxShadow: GcsLayout.panelDepth,
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: scheme.shadow.withValues(alpha: 0.25),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            const Text(
+            Text(
               'Appearance',
               style: TextStyle(
-                color: GcsColors.textPrimary,
+                color: scheme.onSurface,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.2,
               ),
@@ -36,21 +44,31 @@ class SettingsPage extends StatelessWidget {
               value: theme.mode != ThemeMode.light,
               onChanged: (v) => theme.setMode(v ? ThemeMode.dark : ThemeMode.light),
             ),
-            const Divider(height: 1, color: GcsColors.border),
+            Divider(height: 1, color: scheme.outlineVariant),
+            _ToggleTile(
+              title: 'Use phone GPS',
+              subtitle: 'When ON: use mobile location. When OFF: use vehicle/drone GPS.',
+              value: settings.usePhoneGps,
+              onChanged: (v) => settings.setUsePhoneGps(v),
+            ),
+            Divider(height: 1, color: scheme.outlineVariant),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'System',
               style: TextStyle(
-                color: GcsColors.textPrimary,
+                color: scheme.onSurface,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.2,
               ),
             ),
             const SizedBox(height: 6),
-            const ListTile(
-              title: Text('Connection', style: TextStyle(color: GcsColors.textPrimary)),
-              subtitle: Text('Simulated link (demo)', style: TextStyle(color: GcsColors.textSecondary)),
-              leading: Icon(Icons.link, color: GcsColors.textSecondary),
+            ListTile(
+              title: Text('Connection', style: TextStyle(color: scheme.onSurface)),
+              subtitle: Text(
+                'Simulated link (demo)',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              leading: Icon(Icons.link, color: scheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -74,12 +92,12 @@ class _ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
-      title: Text(title, style: const TextStyle(color: GcsColors.textPrimary)),
-      subtitle: Text(subtitle, style: const TextStyle(color: GcsColors.textSecondary)),
-      activeColor: GcsColors.accentPrimary,
+      title: Text(title, style: TextStyle(color: scheme.onSurface)),
+      subtitle: Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant)),
     );
   }
 }
@@ -95,8 +113,9 @@ class _TacticalPageScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: GcsColors.bgMain.withValues(alpha: 0.96),
+      color: scheme.surface.withValues(alpha: 0.96),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -105,8 +124,8 @@ class _TacticalPageScaffold extends StatelessWidget {
             children: [
               Text(
                 title.toUpperCase(),
-                style: const TextStyle(
-                  color: GcsColors.textMuted,
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.2,

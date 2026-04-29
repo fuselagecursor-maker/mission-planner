@@ -24,12 +24,16 @@ import '../../features/mission/presentation/screens/mission_details_screen.dart'
 import '../../features/mission/presentation/screens/mission_editor_screen.dart';
 import '../../features/mission/presentation/screens/mission_wizard_screen.dart';
 import '../../features/dashboard/presentation/screens/alerts_inbox_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../screens/gcs_shell.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 
 /// Centralized route names for consistency and future deep-linking.
 abstract final class AppRoutes {
   static const splash = '/splash';
+  static const auth = '/auth';
+  static const register = '/register';
   static const shell = '/';
   static const missionDetails = '/mission-details';
   static const missionWizard = '/mission-wizard';
@@ -75,6 +79,17 @@ abstract final class AppRouter {
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (_) => const GcsShell(),
+        );
+
+      case AppRoutes.auth:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const LoginScreen(),
+        );
+      case AppRoutes.register:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const RegisterScreen(),
         );
 
       case AppRoutes.missionDetails:

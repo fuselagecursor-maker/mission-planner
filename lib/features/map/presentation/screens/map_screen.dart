@@ -2,6 +2,8 @@
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../../../core/settings/app_settings_controller.dart';
 
 import '../../../../core/gcs/gcs_status_model.dart';
 import '../../../../core/ui/app_spacing.dart';
@@ -60,13 +62,17 @@ class _MapScreenState extends State<MapScreen> {
   bool _satelliteBasemap = false;
   bool _showMissionGeometry = true;
   bool _showVehicleOnMap = true;
+  bool _showPhoneLocation = false;
+  bool _followPhone = false;
   bool _preArmAllPass = false;
   String _flightMode = 'AUTO';
   bool _showModeTransition = false;
   bool _tracking = false;
   bool _armed = false;
   final _mapController = MapController();
-  final LatLng _homePoint = const LatLng(12.9716, 77.5946); // placeholder home
+  static const LatLng _defaultHomePoint = LatLng(12.9716, 77.5946); // placeholder home
+  LatLng _homePoint = _defaultHomePoint;
+  bool _homeSetFromPhone = false;
   Timer? _simTimer;
   final Distance _geoDistance = const Distance();
   DateTime? _lastCameraFollowAt;
@@ -86,6 +92,14 @@ class _MapScreenState extends State<MapScreen> {
   bool _mapHud = true;
   bool _manualControl = false;
   final List<LatLng> _trail = <LatLng>[];
+
+  Position? _phonePos;
+  StreamSubscription<Position>? _phonePosSub;
+  final List<LatLng> _phoneTrail = <LatLng>[];
+  String? _phoneLocationStatus;
+  bool _phonePanelOpen = false;
+  bool? _lastPhoneGpsSetting;
+  int _rightPanelFront = 0; // 0: phone gps, 1: manual control (only used when both panels are open)
   final List<_MissionWp> _missionWps = [
     _MissionWp(id: 'wp-1', index: 1, point: const LatLng(12.9716, 77.5946)),
     _MissionWp(id: 'wp-2', index: 2, point: const LatLng(12.975, 77.602)),
@@ -109,6 +123,8 @@ class _MapScreenState extends State<MapScreen> {
     // Keep motion smooth but reduce rebuild cadence.
     final tick = kIsWeb ? const Duration(milliseconds: 100) : const Duration(milliseconds: 50);
     _simTimer = Timer.periodic(tick, (_) => _onSimTick());
+
+    // Phone GPS starts only if enabled in Settings.
   }
 
   @override
@@ -122,8 +138,83 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _simTimer?.cancel();
+    _phonePosSub?.cancel();
     _vehicleVn.dispose();
     super.dispose();
+  }
+
+  Future<void> _stopPhoneLocation() async {
+    await _phonePosSub?.cancel();
+    _phonePosSub = null;
+    if (!mounted) return;
+    setState(() {
+      _phonePos = null;
+      _phoneTrail.clear();
+      _phoneLocationStatus = null;
+      _followPhone = false;
+      _phonePanelOpen = false;
+      _homePoint = _defaultHomePoint;
+      _homeSetFromPhone = false;
+    });
+  }
+
+  Future<void> _startPhoneLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) setState(() => _phoneLocationStatus = 'Location services are OFF');
+        return;
+      }
+
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied) {
+        if (mounted) setState(() => _phoneLocationStatus = 'Location permission denied');
+        return;
+      }
+      if (perm == LocationPermission.deniedForever) {
+        if (mounted) setState(() => _phoneLocationStatus = 'Location permission denied forever');
+        return;
+      }
+
+      if (mounted) setState(() => _phoneLocationStatus = null);
+
+      await _phonePosSub?.cancel();
+      _phonePosSub = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
+          distanceFilter: 2,
+        ),
+      ).listen(
+        (pos) {
+          if (!mounted) return;
+          final next = LatLng(pos.latitude, pos.longitude);
+          setState(() {
+            _phonePos = pos;
+            if (!_homeSetFromPhone) {
+              _homePoint = next;
+              _homeSetFromPhone = true;
+            }
+            if (_phoneTrail.isEmpty || _geoDistance(_phoneTrail.last, next) >= 2.0) {
+              _phoneTrail.add(next);
+              if (_phoneTrail.length > 500) _phoneTrail.removeAt(0);
+            }
+          });
+          if (_followPhone) {
+            _mapController.move(next, math.max(_mapController.camera.zoom, 16));
+          }
+        },
+        onError: (_) {
+          if (!mounted) return;
+          setState(() => _phoneLocationStatus = 'Location stream error');
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _phoneLocationStatus = 'Location unavailable');
+    }
   }
 
   Widget _mapPrimaryFab() {
@@ -706,6 +797,22 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = SettingsScope.of(context);
+    final enabled = settings.usePhoneGps;
+    if (_lastPhoneGpsSetting != enabled) {
+      _lastPhoneGpsSetting = enabled;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (enabled) {
+          if (!_showPhoneLocation) setState(() => _showPhoneLocation = true);
+          unawaited(_startPhoneLocation());
+        } else {
+          if (_showPhoneLocation) setState(() => _showPhoneLocation = false);
+          unawaited(_stopPhoneLocation());
+        }
+      });
+    }
+
     final scheme = Theme.of(context).colorScheme;
     final modeAccent = _modeAccent(scheme, _flightMode);
     final modeOverlayColor = modeAccent.withValues(alpha: 0.65);
@@ -716,6 +823,32 @@ class _MapScreenState extends State<MapScreen> {
     final extraPolylines = <Polyline>[];
     final extraCircles = <CircleMarker>[];
     final extraMarkers = <Marker>[];
+
+    if (_showPhoneLocation && _phoneTrail.length >= 2) {
+      extraPolylines.add(
+        Polyline(
+          points: List<LatLng>.of(_phoneTrail),
+          strokeWidth: 3,
+          color: scheme.tertiary.withValues(alpha: 0.75),
+        ),
+      );
+    }
+
+    if (_showPhoneLocation && _phonePos != null) {
+      final p = _phonePos!;
+      final phonePoint = LatLng(p.latitude, p.longitude);
+      extraMarkers.add(
+        Marker(
+          point: phonePoint,
+          width: 56,
+          height: 56,
+          child: _PhoneLocationMarker(
+            accuracyM: p.accuracy,
+            headingDeg: p.heading.isFinite ? p.heading : null,
+          ),
+        ),
+      );
+    }
 
     if (vehiclePoint != null) {
       switch (_flightMode) {
@@ -861,11 +994,78 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
         Positioned(
-          right: widget.overlayInsets.right + 8,
-          bottom: (_dockOpen ? 200.0 : 68.0) + 16,
-          child: ManualControlPanel(
-            open: _manualControl,
-            onToggle: () => setState(() => _manualControl = !_manualControl),
+          // Keep clear of the map zoom rail (+ / -) which sits on the far-right.
+          right: widget.overlayInsets.right + 8 + 56,
+          top: 72 + 8,
+          bottom: MediaQuery.paddingOf(context).bottom + (_dockOpen ? 200.0 : 68.0) + 16,
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                // Ensure the dock never exceeds the usable vertical space.
+                maxHeight: MediaQuery.sizeOf(context).height -
+                    (72 + 8) -
+                    (MediaQuery.paddingOf(context).bottom + (_dockOpen ? 200.0 : 68.0) + 16),
+              ),
+              child: _RightPanelsDock(
+            showPhoneGps: _showPhoneLocation,
+            phoneOpen: _phonePanelOpen,
+            manualOpen: _manualControl,
+            frontIndex: _rightPanelFront,
+            onBringToFront: (idx) => setState(() => _rightPanelFront = idx),
+            phone: _PhoneGpsCollapsible(
+              open: _phonePanelOpen,
+              onToggle: () => setState(() => _phonePanelOpen = !_phonePanelOpen),
+              panel: _PhoneLocationPanel(
+                pos: _phonePos,
+                status: _phoneLocationStatus,
+                follow: _followPhone,
+                trailPoints: _phoneTrail.length,
+                onToggleFollow: () => setState(() => _followPhone = !_followPhone),
+                onCenter: () {
+                  final p = _phonePos;
+                  if (p == null) return;
+                  _mapController.move(
+                    LatLng(p.latitude, p.longitude),
+                    math.max(_mapController.camera.zoom, 16),
+                  );
+                },
+                onRetry: _startPhoneLocation,
+                onClearTrail: () => setState(() => _phoneTrail.clear()),
+                onCollapse: () => setState(() => _phonePanelOpen = false),
+              ),
+            ),
+            manual: ManualControlPanel(
+              open: _manualControl,
+              onToggle: () => setState(() => _manualControl = !_manualControl),
+              maxHeight: MediaQuery.sizeOf(context).height * 0.38,
+            ),
+            phoneExpandedPanel: _PhoneLocationPanel(
+              pos: _phonePos,
+              status: _phoneLocationStatus,
+              follow: _followPhone,
+              trailPoints: _phoneTrail.length,
+              onToggleFollow: () => setState(() => _followPhone = !_followPhone),
+              onCenter: () {
+                final p = _phonePos;
+                if (p == null) return;
+                _mapController.move(
+                  LatLng(p.latitude, p.longitude),
+                  math.max(_mapController.camera.zoom, 16),
+                );
+              },
+              onRetry: _startPhoneLocation,
+              onClearTrail: () => setState(() => _phoneTrail.clear()),
+              onCollapse: () => setState(() => _phonePanelOpen = false),
+              maxHeight: MediaQuery.sizeOf(context).height * 0.38,
+            ),
+            manualExpandedPanel: ManualControlPanel(
+              open: true,
+              onToggle: () => setState(() => _manualControl = !_manualControl),
+              maxHeight: MediaQuery.sizeOf(context).height * 0.38,
+            ),
+              ),
+            ),
           ),
         ),
         if (widget.mapZoomRailRight != null)
@@ -959,6 +1159,15 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 expanded: GcsBottomDock(
                   logLines: _buildLogLines(),
+                  headingDeg: _vehicleHeading,
+                  speedMs: _telemetry.groundSpeed,
+                  altitudeMslM: _telemetry.altMsl,
+                  homeDistanceM: _geoDistance(_homePoint, _smoothedVehicle),
+                  climbMps: _telemetry.climbMps,
+                  bankDeg: (_tracking ? 12 * math.sin(_vehiclePhase * 1.15) : 0),
+                  sats: _telemetry.sats,
+                  armed: _armed,
+                  flightMode: _flightMode,
                   missionRow: _GcsBottomMissionRow(
                     onStart: _attemptStartMission,
                     onLoad: () => showLoadMissionDialog(context),
@@ -1258,6 +1467,468 @@ class _HomeMarker extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PhoneLocationMarker extends StatelessWidget {
+  const _PhoneLocationMarker({required this.accuracyM, this.headingDeg});
+
+  final double accuracyM;
+  final double? headingDeg;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final heading = headingDeg;
+
+    return Center(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.tertiary.withValues(alpha: 0.10),
+              border: Border.all(
+                color: scheme.tertiary.withValues(alpha: 0.28),
+                width: 1.2,
+              ),
+            ),
+          ),
+          Transform.rotate(
+            angle: (heading ?? 0) * 3.1415926535 / 180.0,
+            child: Icon(
+              heading == null ? Icons.my_location : Icons.navigation,
+              size: 22,
+              color: scheme.tertiary,
+            ),
+          ),
+          Positioned(
+            bottom: 4,
+            child: Text(
+              accuracyM.isFinite ? '±${accuracyM.toStringAsFixed(0)}m' : 'GPS',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhoneLocationPanel extends StatelessWidget {
+  const _PhoneLocationPanel({
+    required this.pos,
+    required this.status,
+    required this.follow,
+    required this.trailPoints,
+    required this.onToggleFollow,
+    required this.onCenter,
+    required this.onRetry,
+    required this.onClearTrail,
+    required this.onCollapse,
+    this.maxHeight,
+  });
+
+  final Position? pos;
+  final String? status;
+  final bool follow;
+  final int trailPoints;
+  final VoidCallback onToggleFollow;
+  final VoidCallback onCenter;
+  final Future<void> Function() onRetry;
+  final VoidCallback onClearTrail;
+  final VoidCallback onCollapse;
+  final double? maxHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    String fmtNum(double v, {int digits = 5}) =>
+        v.isFinite ? v.toStringAsFixed(digits) : '—';
+    String fmtM(double v) => v.isFinite ? '${v.toStringAsFixed(0)} m' : '—';
+
+    final p = pos;
+    final heading = (p?.heading ?? double.nan);
+    final speed = (p?.speed ?? double.nan);
+    final altitude = (p?.altitude ?? double.nan);
+    final accuracy = (p?.accuracy ?? double.nan);
+
+    Widget row(String k, String v) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 72,
+              child: Text(
+                k,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            Text(
+              v,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: 260, maxHeight: maxHeight ?? 320),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.gps_fixed, size: 18, color: scheme.tertiary),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Phone GPS',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Collapse',
+                    onPressed: onCollapse,
+                    icon: Icon(Icons.chevron_right, size: 18, color: scheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Expanded(
+                child: SingleChildScrollView(
+                  primary: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (status != null) ...[
+                        Text(
+                          status!,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () => onRetry(),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ] else if (p == null) ...[
+                        Text(
+                          'Waiting for fix…',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ] else ...[
+                        row('Lat', fmtNum(p.latitude)),
+                        row('Lon', fmtNum(p.longitude)),
+                        row('Acc', fmtM(accuracy)),
+                        row('Speed', speed.isFinite ? '${speed.toStringAsFixed(1)} m/s' : '—'),
+                        row('Head', heading.isFinite ? '${heading.toStringAsFixed(0)}°' : '—'),
+                        row('Alt', altitude.isFinite ? '${altitude.toStringAsFixed(0)} m' : '—'),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            FilledButton.tonalIcon(
+                              onPressed: onCenter,
+                              icon: const Icon(Icons.center_focus_strong_outlined, size: 18),
+                              label: const Text('Center'),
+                            ),
+                            FilledButton.tonalIcon(
+                              onPressed: onToggleFollow,
+                              icon: Icon(
+                                follow ? Icons.gps_fixed : Icons.gps_not_fixed,
+                                size: 18,
+                              ),
+                              label: Text(follow ? 'Follow ON' : 'Follow'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: trailPoints > 0 ? onClearTrail : null,
+                              icon: const Icon(Icons.delete_outline, size: 18),
+                              label: Text('Trail ($trailPoints)'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Trail recording is ON (2m filter).',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PhoneGpsCollapsible extends StatelessWidget {
+  const _PhoneGpsCollapsible({
+    required this.open,
+    required this.onToggle,
+    required this.panel,
+  });
+
+  final bool open;
+  final VoidCallback onToggle;
+  final Widget panel;
+
+  @override
+  Widget build(BuildContext context) {
+    if (open) return panel;
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: GcsColors.bgPanel.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: GcsColors.border),
+        boxShadow: GcsLayout.panelDepth,
+      ),
+      child: IconButton(
+        tooltip: 'Open phone GPS',
+        onPressed: onToggle,
+        icon: const Icon(Icons.gps_fixed, color: GcsColors.textPrimary, size: 20),
+      ),
+    );
+  }
+}
+
+class _RightPanelsDock extends StatelessWidget {
+  const _RightPanelsDock({
+    required this.showPhoneGps,
+    required this.phoneOpen,
+    required this.manualOpen,
+    required this.frontIndex,
+    required this.onBringToFront,
+    required this.phone,
+    required this.manual,
+    required this.phoneExpandedPanel,
+    required this.manualExpandedPanel,
+  });
+
+  final bool showPhoneGps;
+  final bool phoneOpen;
+  final bool manualOpen;
+  final int frontIndex;
+  final ValueChanged<int> onBringToFront;
+
+  /// Normal widgets (button/panel behavior unchanged)
+  final Widget phone;
+  final Widget manual;
+
+  /// Forced-expanded panels used only when both are open (stacked).
+  final Widget phoneExpandedPanel;
+  final Widget manualExpandedPanel;
+
+  @override
+  Widget build(BuildContext context) {
+    final bothOpen = showPhoneGps && phoneOpen && manualOpen;
+
+    final mq = MediaQuery.of(context);
+    final screenH = mq.size.height;
+    final safeTop = mq.padding.top;
+    final safeBottom = mq.padding.bottom;
+    const topUi = 72.0; // shell top bar
+    // The dock sits above bottom; we use a safe estimate so panels don't cover it.
+    final bottomUi = (screenH >= 760 ? 200.0 : 68.0) + 16;
+    final availableH = (screenH - safeTop - safeBottom - topUi - bottomUi).clamp(220.0, 520.0);
+    final panelMaxH = (availableH * 0.72).clamp(220.0, 360.0);
+    if (!bothOpen) {
+      // Old behavior: just stack the widgets vertically (no overlap).
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (showPhoneGps) ...[
+            phone,
+            const SizedBox(height: 8),
+          ],
+          manual,
+        ],
+      );
+    }
+
+    // New behavior: ONLY the expanded panels are stacked like iOS recent apps.
+    final front = frontIndex.clamp(0, 1);
+
+    Widget card({
+      required Widget child,
+      required bool isFront,
+      required int idx,
+    }) {
+      // Keep a tappable "peek" strip for the back card.
+      // Lift enough to stay visible, but not so much that it dominates.
+      final backPeekTopY = (panelMaxH * 0.22).clamp(44.0, 78.0);
+      final scale = isFront ? 1.0 : 0.97;
+      final offsetY = isFront ? 0.0 : backPeekTopY;
+      final opacity = isFront ? 1.0 : 0.80;
+
+      return AnimatedPositioned(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        right: 0,
+        bottom: offsetY,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          scale: scale,
+          alignment: Alignment.bottomRight,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 140),
+            opacity: opacity,
+            // IMPORTANT: only the BACK card should intercept taps to switch.
+            // The FRONT card must remain fully interactive (buttons/sliders/scroll).
+            child: isFront
+                ? child
+                : GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () => onBringToFront(idx),
+                    onVerticalDragEnd: (d) {
+                      final v = d.primaryVelocity ?? 0;
+                      if (v.abs() < 650) return;
+                      onBringToFront(idx);
+                    },
+                    child: child,
+                  ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: 280,
+      height: (panelMaxH + (panelMaxH * 0.22)).clamp(320.0, 520.0),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Always-visible switch tabs (kept close to panels).
+          Positioned(
+            right: 0,
+            top: 0,
+            child: _PanelSwitchTabs(
+              activeIndex: front,
+              onSelect: onBringToFront,
+            ),
+          ),
+          if (front == 0)
+            card(child: manualExpandedPanel, isFront: false, idx: 1)
+          else
+            card(child: phoneExpandedPanel, isFront: false, idx: 0),
+          if (front == 0)
+            card(child: phoneExpandedPanel, isFront: true, idx: 0)
+          else
+            card(child: manualExpandedPanel, isFront: true, idx: 1),
+        ],
+      ),
+    );
+  }
+}
+
+class _PanelSwitchTabs extends StatelessWidget {
+  const _PanelSwitchTabs({
+    required this.activeIndex,
+    required this.onSelect,
+  });
+
+  final int activeIndex;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tab({
+      required int idx,
+      required IconData icon,
+      required String label,
+    }) {
+      final scheme = Theme.of(context).colorScheme;
+      final active = idx == activeIndex;
+      return InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: () => onSelect(idx),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: (active ? scheme.primary : scheme.surfaceContainerHighest).withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: active ? scheme.primary : scheme.outlineVariant,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: active ? scheme.onPrimary : scheme.onSurface),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: active ? scheme.onPrimary : scheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          tab(idx: 0, icon: Icons.gps_fixed, label: 'GPS'),
+          const SizedBox(width: 8),
+          tab(idx: 1, icon: Icons.sports_esports_rounded, label: 'Manual'),
+        ],
       ),
     );
   }

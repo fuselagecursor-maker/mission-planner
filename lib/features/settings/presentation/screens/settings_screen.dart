@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/settings/app_settings_controller.dart';
 import '../../../../core/theme/theme_controller.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../shared/widgets/app_drawer.dart';
@@ -325,6 +326,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeScope.of(context);
+    final settings = SettingsScope.of(context);
     final scheme = Theme.of(context).colorScheme;
     final dropdownStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
           color: scheme.onSurface,
@@ -407,6 +409,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle: const Text('Taps on critical controls (wireframe)'),
                     value: _hapticFeedback,
                     onChanged: (v) => setState(() => _hapticFeedback = v),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    title: const Text('Use phone GPS'),
+                    subtitle: const Text('When ON: use mobile location. When OFF: use vehicle/drone GPS.'),
+                    value: settings.usePhoneGps,
+                    onChanged: (v) {
+                      settings.setUsePhoneGps(v);
+                      setState(() {});
+                    },
+                    secondary: const Icon(Icons.gps_fixed),
                   ),
                   const Divider(height: 1),
                   ListTile(

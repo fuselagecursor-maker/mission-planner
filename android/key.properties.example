@@ -1,0 +1,12 @@
+# Copy this file to: android/key.properties
+# (That file is gitignored — do not commit it.)
+#
+# 1) Create a keystore (Command Prompt is fine), example:
+#    keytool -genkeypair -v -keystore D:\dev\keystores\mission_planner.jks -alias mission_planner -keyalg RSA -keysize 2048 -validity 10000
+#
+# 2) Fill the values below (use forward slashes in storeFile; Windows paths are OK)
+
+storePassword=your-store-password
+keyPassword=your-key-password
+keyAlias=mission_planner
+storeFile=D:/dev/keystores/mission_planner.jks

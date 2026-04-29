@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // Tiny delay to avoid jarring transition.
     await Future<void>.delayed(const Duration(milliseconds: 250));
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.shell);
+    Navigator.of(context).pushReplacementNamed(AppRoutes.auth);
   }
 
   @override

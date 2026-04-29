@@ -7,10 +7,12 @@ class ManualControlPanel extends StatefulWidget {
     super.key,
     required this.open,
     required this.onToggle,
+    this.maxHeight,
   });
 
   final bool open;
   final VoidCallback onToggle;
+  final double? maxHeight;
 
   @override
   State<ManualControlPanel> createState() => _ManualControlPanelState();
@@ -33,70 +35,82 @@ class _ManualControlPanelState extends State<ManualControlPanel> {
         border: Border.all(color: GcsColors.border),
         boxShadow: GcsLayout.panelDepth,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.sports_esports_rounded, size: 18, color: GcsColors.textSecondary),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'MANUAL CONTROL',
-                  style: TextStyle(
-                    color: GcsColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: widget.maxHeight ?? 320),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.sports_esports_rounded, size: 18, color: GcsColors.textSecondary),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'MANUAL CONTROL',
+                    style: TextStyle(
+                      color: GcsColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Collapse manual controls',
-                onPressed: widget.onToggle,
-                icon: const Icon(Icons.chevron_right, color: GcsColors.textSecondary),
-                style: IconButton.styleFrom(
-                  minimumSize: const Size(36, 36),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                IconButton(
+                  tooltip: 'Collapse manual controls',
+                  onPressed: widget.onToggle,
+                  icon: const Icon(Icons.chevron_right, color: GcsColors.textSecondary),
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(36, 36),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: SingleChildScrollView(
+                primary: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _AxisSlider(
+                      label: 'Throttle',
+                      value: _throttle,
+                      onChanged: (v) => setState(() => _throttle = v),
+                    ),
+                    const SizedBox(height: 6),
+                    _AxisSlider(label: 'Yaw', value: _yaw, onChanged: (v) => setState(() => _yaw = v)),
+                    const SizedBox(height: 6),
+                    _AxisSlider(label: 'Pitch', value: _pitch, onChanged: (v) => setState(() => _pitch = v)),
+                    const SizedBox(height: 6),
+                    _AxisSlider(label: 'Roll', value: _roll, onChanged: (v) => setState(() => _roll = v)),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: GcsColors.bgMain,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: GcsColors.border),
+                      ),
+                      child: Text(
+                        'T ${_throttle.toStringAsFixed(2)}  '
+                        'Y ${_yaw.toStringAsFixed(2)}  '
+                        'P ${_pitch.toStringAsFixed(2)}  '
+                        'R ${_roll.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: GcsColors.textSecondary,
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _AxisSlider(
-            label: 'Throttle',
-            value: _throttle,
-            onChanged: (v) => setState(() => _throttle = v),
-          ),
-          const SizedBox(height: 6),
-          _AxisSlider(label: 'Yaw', value: _yaw, onChanged: (v) => setState(() => _yaw = v)),
-          const SizedBox(height: 6),
-          _AxisSlider(label: 'Pitch', value: _pitch, onChanged: (v) => setState(() => _pitch = v)),
-          const SizedBox(height: 6),
-          _AxisSlider(label: 'Roll', value: _roll, onChanged: (v) => setState(() => _roll = v)),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: GcsColors.bgMain,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: GcsColors.border),
             ),
-            child: Text(
-              'T ${_throttle.toStringAsFixed(2)}  '
-              'Y ${_yaw.toStringAsFixed(2)}  '
-              'P ${_pitch.toStringAsFixed(2)}  '
-              'R ${_roll.toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: GcsColors.textSecondary,
-                fontFamily: 'monospace',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
 
