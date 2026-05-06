@@ -1,0 +1,41 @@
+# Build Flutter web in CI and deploy the static output to Vercel.
+#
+# Repo secrets (GitHub → Settings → Secrets → Actions):
+#   AUTH_API_URL       e.g. https://mission-planner-production.up.railway.app (no trailing slash)
+#   VERCEL_TOKEN       from https://vercel.com/account/tokens
+#
+# After first successful deploy, set Railway mission-planner CORS_ORIGIN to your Vercel URL.
+
+name: Deploy Flutter web to Vercel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build web
+        env:
+          AUTH_API_URL: ${{ secrets.AUTH_API_URL }}
+        run: |
+          test -n "$AUTH_API_URL" || (echo "Set AUTH_API_URL secret in repo Settings → Secrets → Actions" && exit 1)
+          flutter build web --release --dart-define=AUTH_API_URL="$AUTH_API_URL"
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          test -n "$VERCEL_TOKEN" || (echo "Set VERCEL_TOKEN secret" && exit 1)
+          npm install -g vercel@latest
+          cd build/web
+          vercel deploy --prod --yes --token "$VERCEL_TOKEN"
