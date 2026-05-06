@@ -19,9 +19,9 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Drawer(
-      backgroundColor: GcsColors.bgMain,
+      backgroundColor: scheme.surface,
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: GcsColors.bgMain),
+        decoration: BoxDecoration(color: scheme.surface),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),

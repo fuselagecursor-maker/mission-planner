@@ -53,6 +53,7 @@ class _GcsShellState extends State<GcsShell> {
       context: context,
       showDragHandle: true,
       builder: (ctx) {
+        final scheme = Theme.of(ctx).colorScheme;
         Widget tile({
           required IconData icon,
           required String title,
@@ -60,9 +61,9 @@ class _GcsShellState extends State<GcsShell> {
           required String route,
         }) {
           return ListTile(
-            leading: Icon(icon, color: GcsColors.textSecondary),
-            title: Text(title, style: const TextStyle(color: GcsColors.textPrimary)),
-            subtitle: Text(subtitle, style: const TextStyle(color: GcsColors.textSecondary)),
+            leading: Icon(icon, color: scheme.onSurfaceVariant),
+            title: Text(title, style: TextStyle(color: scheme.onSurface)),
+            subtitle: Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant)),
             onTap: () {
               Navigator.of(ctx).pop();
               setState(() => _section = GcsNavSection.map);
@@ -80,17 +81,17 @@ class _GcsShellState extends State<GcsShell> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  const ListTile(
+                  ListTile(
                     title: Text(
                       'Tools',
-                      style: TextStyle(color: GcsColors.textPrimary, fontWeight: FontWeight.w900),
+                      style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w900),
                     ),
                     subtitle: Text(
                       'Secondary panels / utilities',
-                      style: TextStyle(color: GcsColors.textSecondary),
+                      style: TextStyle(color: scheme.onSurfaceVariant),
                     ),
                   ),
-                  const Divider(height: 1, color: GcsColors.border),
+                  Divider(height: 1, color: scheme.outlineVariant),
                   tile(
                     icon: Icons.sensors_rounded,
                     title: 'Telemetry',
@@ -150,6 +151,7 @@ class _GcsShellState extends State<GcsShell> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     const shellPad = 8.0;
     const gapAfterSidebar = 8.0;
     const kTelemEdge = 8.0;
@@ -176,7 +178,7 @@ class _GcsShellState extends State<GcsShell> {
     final mapOverlayRight = kTelemEdge + telemetryStripW + kAfterTelemStripGap;
 
     return Scaffold(
-      backgroundColor: GcsColors.bgMain,
+      backgroundColor: scheme.surface,
       body: Stack(
         children: [
           // Map is always the base layer (primary).
@@ -192,13 +194,13 @@ class _GcsShellState extends State<GcsShell> {
                     ),
                   )
                 : Container(
-                    color: GcsColors.bgMain,
+                    color: scheme.surface,
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       'MAP DISABLED (performance mode)\nTell me “turn map back on” to re-enable.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: GcsColors.textMuted,
+                        color: scheme.onSurfaceVariant,
                         fontWeight: FontWeight.w800,
                         height: 1.35,
                       ),
@@ -241,7 +243,7 @@ class _GcsShellState extends State<GcsShell> {
                               borderRadius: BorderRadius.circular(GcsLayout.radius),
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: GcsColors.border),
+                                  border: Border.all(color: scheme.outlineVariant),
                                   boxShadow: GcsLayout.panelDepth,
                                 ),
                                 child: KeyedSubtree(
@@ -282,19 +284,19 @@ class _GcsShellState extends State<GcsShell> {
                       IconButton(
                         tooltip: 'Tools',
                         onPressed: _openToolsSheet,
-                        icon: const Icon(Icons.apps, color: GcsColors.textSecondary, size: 20),
+                        icon: Icon(Icons.apps, color: scheme.onSurfaceVariant, size: 20),
                       ),
                       IconButton(
                         tooltip: 'Toggle telemetry panel',
                         onPressed: () => setState(() => _telemetryOpen = !_telemetryOpen),
-                        icon: const Icon(Icons.tune, color: GcsColors.textSecondary, size: 20),
+                        icon: Icon(Icons.tune, color: scheme.onSurfaceVariant, size: 20),
                       ),
                       IconButton(
                         tooltip: 'Close page',
                         onPressed: _section == GcsNavSection.map
                             ? null
                             : () => setState(() => _section = GcsNavSection.map),
-                        icon: const Icon(Icons.close, color: GcsColors.textSecondary, size: 20),
+                        icon: Icon(Icons.close, color: scheme.onSurfaceVariant, size: 20),
                       ),
                     ],
                   ),

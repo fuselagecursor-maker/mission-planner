@@ -23,8 +23,9 @@ class MapZoomRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: GcsColors.bgPanel.withValues(alpha: 0.92),
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
       elevation: 2,
       borderRadius: BorderRadius.circular(10),
       child: Column(
@@ -35,13 +36,13 @@ class MapZoomRail extends StatelessWidget {
             icon: Icons.add,
             onPressed: () => _nudgeZoom(0.6),
           ),
-          const Divider(height: 1, color: GcsColors.border),
+          Divider(height: 1, color: scheme.outlineVariant),
           _MapZoomButton(
             tooltip: 'Zoom out',
             icon: Icons.remove,
             onPressed: () => _nudgeZoom(-0.6),
           ),
-          const Divider(height: 1, color: GcsColors.border),
+          Divider(height: 1, color: scheme.outlineVariant),
           _MapZoomButton(
             tooltip: 'Recenter on vehicle',
             icon: Icons.my_location,
@@ -72,10 +73,11 @@ class _MapZoomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
-      icon: Icon(icon, size: 20, color: GcsColors.textPrimary),
+      icon: Icon(icon, size: 20, color: scheme.onSurface),
       style: IconButton.styleFrom(
         padding: const EdgeInsets.all(6),
         minimumSize: const Size(40, 36),

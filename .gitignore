@@ -53,3 +53,20 @@ tools/gradle/
 **/*.pem
 **/*.p12
 **/key.properties
+
+# Node / backend
+backend/node_modules/
+backend/.env
+backend/.env.*
+
+# Docs / exports (project-specific)
+SRS_*.docx
+SRS_*.pdf
+SRS_*extracted*.txt
+
+# Local secrets / test artifacts (never commit)
+login.json
+
+# Embedded firmware bundle (multi-GB; clone or store separately)
+FC firmware/
+FC firmware.zip

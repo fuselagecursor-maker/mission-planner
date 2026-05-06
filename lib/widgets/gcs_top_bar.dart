@@ -38,14 +38,15 @@ class GcsTopBarOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ClipRRect(
       borderRadius: BorderRadius.circular(GcsLayout.radius),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: GcsColors.bgPanel.withValues(alpha: 0.78),
-            border: Border.all(color: GcsColors.border),
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.78),
+            border: Border.all(color: scheme.outlineVariant),
             boxShadow: GcsLayout.panelDepth,
           ),
           child: GcsTopStatusBar(

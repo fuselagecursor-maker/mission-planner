@@ -17,6 +17,7 @@ class RthFeedbackWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!active) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
@@ -47,8 +48,8 @@ class RthFeedbackWidget extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 '$phase · $distanceM m',
-                style: const TextStyle(
-                  color: GcsColors.textPrimary,
+                style: TextStyle(
+                  color: scheme.onSurface,
                   fontWeight: FontWeight.w900,
                   fontSize: 12,
                 ),

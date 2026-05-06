@@ -26,13 +26,14 @@ class _ManualControlPanelState extends State<ManualControlPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final panel = Container(
       width: 260,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel.withValues(alpha: 0.92),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: ConstrainedBox(
@@ -42,13 +43,13 @@ class _ManualControlPanelState extends State<ManualControlPanel> {
           children: [
             Row(
               children: [
-                const Icon(Icons.sports_esports_rounded, size: 18, color: GcsColors.textSecondary),
+                Icon(Icons.sports_esports_rounded, size: 18, color: scheme.onSurfaceVariant),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'MANUAL CONTROL',
                     style: TextStyle(
-                      color: GcsColors.textMuted,
+                      color: scheme.onSurfaceVariant,
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.2,
@@ -58,7 +59,7 @@ class _ManualControlPanelState extends State<ManualControlPanel> {
                 IconButton(
                   tooltip: 'Collapse manual controls',
                   onPressed: widget.onToggle,
-                  icon: const Icon(Icons.chevron_right, color: GcsColors.textSecondary),
+                  icon: Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
                   style: IconButton.styleFrom(
                     minimumSize: const Size(36, 36),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -88,17 +89,17 @@ class _ManualControlPanelState extends State<ManualControlPanel> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
-                        color: GcsColors.bgMain,
+                        color: scheme.surface,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: GcsColors.border),
+                        border: Border.all(color: scheme.outlineVariant),
                       ),
                       child: Text(
                         'T ${_throttle.toStringAsFixed(2)}  '
                         'Y ${_yaw.toStringAsFixed(2)}  '
                         'P ${_pitch.toStringAsFixed(2)}  '
                         'R ${_roll.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: GcsColors.textSecondary,
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
                           fontFamily: 'monospace',
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -120,15 +121,15 @@ class _ManualControlPanelState extends State<ManualControlPanel> {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel.withValues(alpha: 0.92),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: IconButton(
         tooltip: 'Open manual controls',
         onPressed: widget.onToggle,
-        icon: const Icon(Icons.sports_esports_rounded, color: GcsColors.textPrimary, size: 20),
+        icon: Icon(Icons.sports_esports_rounded, color: scheme.onSurface, size: 20),
       ),
     );
   }
@@ -147,13 +148,14 @@ class _AxisSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         SizedBox(
           width: 62,
           child: Text(
             label,
-            style: const TextStyle(color: GcsColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700),
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w700),
           ),
         ),
         Expanded(
@@ -176,7 +178,7 @@ class _AxisSlider extends StatelessWidget {
           child: Text(
             value.toStringAsFixed(2),
             textAlign: TextAlign.right,
-            style: const TextStyle(color: GcsColors.textMuted, fontSize: 10, fontWeight: FontWeight.w800),
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w800),
           ),
         ),
       ],

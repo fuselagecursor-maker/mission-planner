@@ -39,13 +39,14 @@ class GcsBottomDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       height: 188,
       margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel,
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(GcsLayout.radius),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: Column(
@@ -55,7 +56,7 @@ class GcsBottomDock extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
             child: missionRow,
           ),
-          const Divider(color: GcsColors.border, height: 1),
+          Divider(color: scheme.outlineVariant, height: 1),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -82,7 +83,7 @@ class GcsBottomDock extends StatelessWidget {
                           child: _LogTerminal(logLines: logLines),
                         ),
                         if (hasHud) ...[
-                          const VerticalDivider(width: 1, color: GcsColors.border),
+                          VerticalDivider(width: 1, color: scheme.outlineVariant),
                           SizedBox(
                             width: hudW,
                             child: _DockHudCard(
@@ -98,7 +99,7 @@ class GcsBottomDock extends StatelessWidget {
                             ),
                           ),
                         ],
-                        const VerticalDivider(width: 1, color: GcsColors.border),
+                        VerticalDivider(width: 1, color: scheme.outlineVariant),
                         const Expanded(
                           flex: 4,
                           child: _SparklineStub(),
@@ -123,8 +124,9 @@ class _LogTerminal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: GcsColors.bgMain,
+      color: scheme.surface,
       padding: const EdgeInsets.all(8),
       child: ListView(
         children: logLines
@@ -134,7 +136,7 @@ class _LogTerminal extends StatelessWidget {
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 10,
                   height: 1.35,
-                  color: GcsColors.accentSuccess.withValues(alpha: 0.85),
+                  color: scheme.tertiary.withValues(alpha: 0.9),
                 ),
               ),
             )
@@ -149,9 +151,10 @@ class _SparklineStub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return CustomPaint(
       painter: _AltStubPainter(),
-      child: const Center(
+      child: Center(
         child: Padding(
           padding: EdgeInsets.all(8),
           child: Align(
@@ -159,7 +162,7 @@ class _SparklineStub extends StatelessWidget {
             child: Text(
               'ALT (m) — live graph',
               style: TextStyle(
-                color: GcsColors.textMuted,
+                color: scheme.onSurfaceVariant,
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
               ),
@@ -196,6 +199,7 @@ class _DockHudCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final hdg = ((headingDeg % 360) + 360) % 360;
     final gs = speedMs * 3.6;
     final ias = gs * 0.98;
@@ -204,7 +208,7 @@ class _DockHudCard extends StatelessWidget {
     final pitchDeg = ((climbMps ?? 0.0) * 4.8).clamp(-18.0, 18.0);
     final satCount = sats ?? (11 + (math.sin(hdg * math.pi / 180) * 2)).round().clamp(8, 16);
     return Container(
-      color: GcsColors.bgMain.withValues(alpha: 0.35),
+      color: scheme.surface.withValues(alpha: 0.35),
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
       child: LayoutBuilder(
         builder: (context, c) {
@@ -283,13 +287,14 @@ class _HudTapeColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     Widget cell(String label, String value, {bool highlight = false}) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: TextStyle(
-            color: GcsColors.textMuted,
+            color: scheme.onSurfaceVariant,
             fontSize: compact ? 7 : 8,
             fontWeight: FontWeight.w800,
           ),
@@ -298,7 +303,7 @@ class _HudTapeColumn extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: GcsColors.textPrimary,
+              color: scheme.onSurface,
               fontSize: compact ? 14 : 16,
               fontWeight: FontWeight.w800,
               height: 1,
@@ -308,14 +313,14 @@ class _HudTapeColumn extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 5, vertical: 1),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.65), width: 1),
+              color: scheme.surface.withValues(alpha: 0.7),
+              border: Border.all(color: scheme.outlineVariant, width: 1),
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(
               value,
               style: TextStyle(
-                color: Colors.white,
+                color: scheme.onSurface,
                 fontSize: compact ? 13 : 15,
                 fontWeight: FontWeight.w900,
                 height: 1,
@@ -394,6 +399,7 @@ class _AttitudeDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: pitchDeg),
       duration: const Duration(milliseconds: 220),
@@ -417,6 +423,7 @@ class _AttitudeDisplay extends StatelessWidget {
                     satCount: satCount,
                     armed: armed,
                     flightMode: flightMode,
+                    scheme: scheme,
                   ),
                 ),
               ),
@@ -437,6 +444,7 @@ class _PfdPainter extends CustomPainter {
     required this.satCount,
     required this.armed,
     required this.flightMode,
+    required this.scheme,
   });
 
   final bool compact;
@@ -446,6 +454,7 @@ class _PfdPainter extends CustomPainter {
   final int satCount;
   final bool armed;
   final String flightMode;
+  final ColorScheme scheme;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -458,13 +467,15 @@ class _PfdPainter extends CustomPainter {
     canvas.drawRRect(
       frame,
       Paint()
-        ..color = const Color(0xFF101A27)
+        ..color = scheme.brightness == Brightness.light
+            ? scheme.surfaceContainerHighest
+            : const Color(0xFF101A27)
         ..style = PaintingStyle.fill,
     );
     canvas.drawRRect(
       frame,
       Paint()
-        ..color = GcsColors.border
+        ..color = scheme.outlineVariant
         ..style = PaintingStyle.stroke,
     );
 
@@ -474,7 +485,13 @@ class _PfdPainter extends CustomPainter {
 
     // top heading strip
     final headingBand = Rect.fromLTWH(0, 0, w, compact ? 16 : 18);
-    canvas.drawRect(headingBand, Paint()..color = const Color(0xFF324257));
+    canvas.drawRect(
+      headingBand,
+      Paint()
+        ..color = scheme.brightness == Brightness.light
+            ? scheme.surfaceContainerHighest.withValues(alpha: 0.95)
+            : const Color(0xFF324257),
+    );
     final hdgPxStep = w / 8;
     for (int i = 0; i <= 8; i++) {
       final x = i * hdgPxStep;
@@ -483,7 +500,7 @@ class _PfdPainter extends CustomPainter {
         Offset(x, headingBand.bottom),
         Offset(x, headingBand.bottom - len),
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.55)
+          ..color = scheme.onSurface.withValues(alpha: 0.55)
           ..strokeWidth = 1,
       );
     }
@@ -491,7 +508,7 @@ class _PfdPainter extends CustomPainter {
       canvas,
       text: 'W     ${headingDeg.toStringAsFixed(0)}     N',
       at: Offset(cx, headingBand.center.dy),
-      color: const Color(0xFFE6EDF3),
+      color: scheme.onSurface,
       size: compact ? 7 : 8,
       alignCenter: true,
       bold: true,
@@ -654,7 +671,11 @@ class _AltStubPainter extends CustomPainter {
     final w = size.width - pad * 2;
     final h = size.height - pad * 2;
     final r = Rect.fromLTWH(pad, pad + 12, w, h - 12);
-    canvas.drawLine(Offset(pad, r.bottom), Offset(r.right, r.bottom), p..color = GcsColors.textMuted);
+    canvas.drawLine(
+      Offset(pad, r.bottom),
+      Offset(r.right, r.bottom),
+      p..color = GcsColors.accentPrimary.withValues(alpha: 0.25),
+    );
     var x = r.left;
     var y = r.bottom - 8.0;
     final path = Path()..moveTo(x, y);

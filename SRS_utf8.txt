@@ -1,0 +1,579 @@
+﻿SOFTWARE REQUIREMENTS SPECIFICATION
+Requirement Analysis Document
+Drone Mission Planner
+Flutter-Based Ground Control Station UI
+Version 3.0 ΓÇö Production-Ready Enterprise Specification
+Document Revision History
+1. Introduction
+1.1 Purpose
+This Software Requirements Specification (SRS) document formally defines the complete functional and non-functional requirements of the Drone Mission Planner application ΓÇö a production-grade Ground Control Station (GCS) frontend built with the Flutter framework. It is intended for use by developers, systems architects, academic evaluators, project reviewers, and all stakeholders involved in designing, implementing, testing, or extending the system. This document serves as the contractual baseline against which the system will be verified and validated.
+Version 3.0 represents the finalised, production-ready specification, extending v2.0 with all remaining critical UI capabilities: manual flight control, camera and gimbal management, flight mode visualisation, mission replay, airspace awareness, advanced power analytics, system state machine, extensibility framework, and multi-vehicle management. The document additionally provides a comprehensive UI Architecture section and enhanced non-functional requirements aligned with enterprise deployment standards.
+1.2 Scope
+The Drone Mission Planner is a cross-platform mobile and desktop application built with the Flutter framework. The full-scope GCS UI enables drone operators and technicians to:
+Plan, visualise, simulate, and manage UAV flight missions on an interactive map
+Control drone hardware manually and autonomously via a unified command interface
+Monitor real-time telemetry, attitude, and GNSS data through structured dashboards
+Configure vehicle parameters, calibrate sensors, manage firmware, and tune PID controllers
+Operate camera payloads and gimbal systems from an integrated media control panel
+Replay historical flight logs with synchronised telemetry and map position
+Monitor airspace restrictions, no-fly zones, and regulatory boundaries
+Analyse battery and power consumption with predictive return-to-home calculations
+Track and transition between drone operational states through a defined state machine
+Manage multiple vehicles simultaneously from a unified multi-vehicle interface
+Extend system capabilities through a modular plugin framework
+This SRS covers only the frontend application. Backend services, live drone hardware communication beyond the MAVLink abstraction layer, cloud data synchronisation, and hardware-in-the-loop (HIL) simulation infrastructure are outside the scope of this document.
+1.3 Definitions, Acronyms, and Abbreviations
+1.4 Document Overview
+Section 1: Introduction, purpose, scope, definitions
+Section 2: Overall system description, user classes, operating environment
+Section 3: Functional requirements FR-01 through FR-29 covering all UI feature groups
+Section 4: Non-functional requirements ΓÇö performance, usability, security, data integrity
+Section 5: Use cases UC-01 through UC-14
+Section 6: System diagrams ΓÇö use case model and layered architecture
+Section 7: UI Architecture ΓÇö navigation flow, screen hierarchy, layout structure
+Section 8: Advanced feature specifications
+Section 9: Future scope
+Section 10: References
+2. Overall Description
+2.1 Product Perspective
+The Drone Mission Planner is a standalone frontend application that does not depend on any external server in its current form. All data ΓÇö missions, settings, simulated telemetry, PID profiles, and flight logs ΓÇö is managed on-device. The application is architecturally positioned to integrate with a future REST/WebSocket backend and a MAVLink-based drone communication layer with minimal changes to the Domain and Presentation layers.
+The v3.0 specification introduces the full operational workflow of a production GCS: operators can take manual flight control at any moment, manage camera payloads, monitor live and replayed telemetry, observe airspace constraints, and track system state through a formal FSM. The architecture is extended with a plugin framework that allows third-party module integration without core application modification.
+2.2 User Classes
+2.3 Operating Environment
+Android 9.0 (API Level 28) and above
+iOS 13.0 and above
+Windows 10 / macOS 12+ (Flutter desktop target ΓÇö secondary support)
+Minimum 3 GB RAM recommended for advanced telemetry, graphing, and camera feed features
+Internet connectivity required for map tile rendering and airspace data; core mission logic functions offline
+Bluetooth / USB / Wi-Fi connectivity required for live drone communication and manual control (future MAVLink scope)
+Gamepad / joystick device (HID) optionally connectable via USB OTG or Bluetooth for manual control
+2.4 Assumptions and Constraints
+No backend server is implemented in the current version; all persistence is local (Hive/SharedPreferences).
+All telemetry and camera data are simulated unless a MAVLink connection is established.
+Manual control UI operates in simulated mode for safety; real actuation requires MAVLink integration.
+Airspace overlay data is sourced from a third-party provider (e.g., OpenAIP or AirMap SDK) requiring internet access; the UI degrades gracefully when offline.
+PID tuning, sensor calibration, and firmware flashing UIs are functional mockups in the current version; hardware actuation is deferred to the MAVLink integration phase.
+The plugin framework exposes a Dart interface; actual plugin binaries require separate compilation and side-loading approval per platform.
+3. Functional Requirements
+Requirements marked [ADDED v3.0] are new to this version. All others carry forward from SRS v2.0 unchanged. Only representative existing requirements are restated for document completeness; the full v2.0 FR catalogue (FR-01 through FR-20) remains in force.
+3.1ΓÇô3.20  Retained Requirements (FR-01 to FR-20)
+Sections 3.1 through 3.20 define FR-01 through FR-20 as specified in SRS v2.0. These requirements are carried forward without modification. The full text of each requirement is available in the v2.0 document. Key feature groups covered:
+FR-01 Map Interface
+FR-02 Waypoint Management
+FR-03 Flight Path Visualisation
+FR-04 Mission Creation and Editing
+FR-05 Mission Save and Load
+FR-06 Drone Connection Status
+FR-07 Telemetry Display
+FR-08 Mission Execution Controls
+FR-09 Live Position Tracking
+FR-10 Safety Features
+FR-11 Settings
+FR-12 Simulation Mode
+FR-13 Vehicle Setup and Configuration
+FR-14 Firmware Management
+FR-15 PID Tuning
+FR-16 Advanced Mission Planning
+FR-17 Logs and Diagnostics
+FR-18 User Roles and Access
+FR-19 Notifications and Alerts
+FR-20 Accessibility and Internationalisation
+3.21  Manual Flight Control Interface [FR-21]
+ADDED v3.0 ΓÇö This section introduces the on-screen manual control UI for direct drone command input.
+FR-21-01 [ADDED v3.0] The system shall provide a Manual Control screen accessible from the main navigation drawer and via a quick-access button on the map screen HUD.
+FR-21-02 [ADDED v3.0] The system shall display two virtual joystick widgets on the Manual Control screen: a left joystick controlling throttle (vertical axis) and yaw (horizontal axis), and a right joystick controlling pitch (vertical axis) and roll (horizontal axis), conforming to the Mode 2 RC transmitter layout by default.
+FR-21-03 [ADDED v3.0] The system shall allow the user to switch the joystick layout between Mode 1, Mode 2, Mode 3, and Mode 4 in Settings, redefining axis-to-channel assignments accordingly.
+FR-21-04 [ADDED v3.0] The system shall render each virtual joystick with a circular boundary indicator, a draggable thumb that returns to centre on release (spring-return behaviour), and a crosshair overlay.
+FR-21-05 [ADDED v3.0] The system shall display real-time channel output values (0ΓÇô100% or ┬▒100%) adjacent to each joystick axis as numerical readouts, updating at a minimum of 20 Hz.
+FR-21-06 [ADDED v3.0] The system shall support input from a connected USB or Bluetooth HID gamepad/joystick device, mapping physical axes and buttons to the drone channel outputs per a configurable axis-mapping panel.
+FR-21-07 [ADDED v3.0] The system shall support keyboard input for manual control when running on desktop platforms, with configurable key bindings for throttle, yaw, pitch, and roll increments.
+FR-21-08 [ADDED v3.0] The system shall provide a Manual Override button on the mission execution HUD that, when activated, immediately suspends the autonomous mission sequence and transfers authority to the manual control input channels.
+FR-21-09 [ADDED v3.0] The system shall display a prominent 'MANUAL OVERRIDE ACTIVE' banner and change the HUD border colour to amber when manual override is engaged.
+FR-21-10 [ADDED v3.0] The system shall provide a Sensitivity Configuration panel allowing the user to adjust joystick sensitivity (expo curve) independently for each axis using a slider, with a preview graph showing the input-to-output curve.
+FR-21-11 [ADDED v3.0] The system shall implement a dead-zone configuration for each joystick axis (0ΓÇô20% of travel), suppressing output below the dead-zone threshold to prevent unintended micro-commands.
+FR-21-12 [ADDED v3.0] The system shall require the user to enable manual control explicitly via a two-step confirmation before the manual control input channels become active, preventing accidental activation.
+FR-21-13 [ADDED v3.0] The system shall display a latency indicator on the Manual Control screen showing the round-trip command latency (ms) when connected to a live drone.
+3.22  Camera and Payload Control [FR-22]
+ADDED v3.0 ΓÇö This section defines all camera feed, gimbal, and media capture UI requirements.
+FR-22-01 [ADDED v3.0] The system shall provide a Camera and Payload screen accessible from the main navigation drawer and via a dedicated camera icon in the mission execution HUD.
+FR-22-02 [ADDED v3.0] The system shall display a camera live feed panel occupying the primary viewport of the Camera screen, rendering either a real-time video stream (when connected via MAVLink/RTSP) or a simulated placeholder image with an OSD overlay.
+FR-22-03 [ADDED v3.0] The OSD overlay on the camera feed panel shall display: current altitude, horizontal speed, heading, battery percentage, GPS coordinates, recording status, and timestamp ΓÇö rendered as non-intrusive text in the feed corners.
+FR-22-04 [ADDED v3.0] The system shall provide a Gimbal Control panel with: a pitch slider (range: ΓêÆ90┬░ to +30┬░, 1┬░ resolution), a yaw slider (range: ΓêÆ180┬░ to +180┬░, 1┬░ resolution), and a Re-Centre button that commands the gimbal to the 0┬░/0┬░ position.
+FR-22-05 [ADDED v3.0] The system shall display the current gimbal pitch and yaw angles as numerical readouts adjacent to their respective sliders, updating in real time.
+FR-22-06 [ADDED v3.0] The system shall provide a Follow Mode toggle that, when enabled, commands the gimbal yaw to track the drone's heading automatically, keeping the camera pointed forward.
+FR-22-07 [ADDED v3.0] The system shall provide a Region-of-Interest (ROI) Lock button that, when activated with a map point selected, commands the gimbal to continuously point at the designated ROI coordinate regardless of drone heading.
+FR-22-08 [ADDED v3.0] The system shall provide a Camera Settings panel with configurable controls for: ISO (100ΓÇô6400 in standard steps), shutter speed (1/8000 s to 1 s in standard steps), aperture (if supported by payload), white balance (auto, sunny, cloudy, indoor), image resolution (selectable from payload-reported options), and video resolution / frame rate.
+FR-22-09 [ADDED v3.0] The system shall provide media capture controls: a Capture Photo button (single shot), a Burst Mode toggle (3/5/10 shots), a Start/Stop Video Recording button with a prominent red recording indicator and elapsed recording time counter.
+FR-22-10 [ADDED v3.0] The system shall display camera trigger preview markers along the mission flight path on the map, showing the geo-referenced capture positions calculated from the camera trigger interval (FR-04-05).
+FR-22-11 [ADDED v3.0] The system shall display a media storage status indicator showing: remaining storage (GB), estimated remaining photo count, and estimated remaining video recording time at current resolution.
+FR-22-12 [ADDED v3.0] The system shall allow the user to browse captured media thumbnails in an on-device gallery panel, and delete individual media items with a confirmation prompt.
+3.23  Flight Mode Visualisation [FR-23]
+ADDED v3.0 ΓÇö Provides visual representation of all drone flight modes within the map and HUD.
+FR-23-01 [ADDED v3.0] The system shall display the currently active flight mode name prominently in the HUD and in the connection status bar, updated in real time.
+FR-23-02 [ADDED v3.0] The system shall render a visual overlay on the map for each active flight mode as follows: Loiter mode shall render an animated circular arc around the drone's current position indicating the loiter radius; Auto mode shall highlight the active flight path polyline with a direction-of-travel animation; RTH mode shall render a direct-line path from the drone's current position to the Home point with an animated arrow; Land mode shall render a vertical descent indicator below the drone icon.
+FR-23-03 [ADDED v3.0] The system shall display a Flight Mode Transition indicator in the HUD whenever the drone switches flight modes, showing the previous mode, an arrow, and the new mode for a 3-second duration before fading.
+FR-23-04 [ADDED v3.0] The system shall provide a Flight Mode Reference panel (accessible via a help icon) displaying a card for each available flight mode, containing: mode name, icon, brief description (2ΓÇô3 sentences), key behaviours, and typical use case.
+FR-23-05 [ADDED v3.0] The system shall colour-code the HUD border and the drone icon halo according to the current flight mode category: autonomous modes (blue), manual modes (green), emergency modes (red), transitional modes (amber).
+FR-23-06 [ADDED v3.0] The system shall display tooltips on the flight mode selector control (FR-08-06) for each mode, summarising expected behaviour before the user selects it.
+3.24  Mission Replay System [FR-24]
+ADDED v3.0 ΓÇö Map-based replay of recorded flight logs with synchronised telemetry.
+FR-24-01 [ADDED v3.0] The system shall provide a Mission Replay screen accessible from the Flight Logs section in the main navigation drawer.
+FR-24-02 [ADDED v3.0] The system shall allow the user to load any previously recorded flight log file (.log.gz format) into the replay engine.
+FR-24-03 [ADDED v3.0] The system shall render the drone's recorded GPS track on the map as a colour-coded polyline, with colour varying by speed (cold-to-hot: blue ΓåÆ green ΓåÆ yellow ΓåÆ red) to provide immediate visual speed profiling.
+FR-24-04 [ADDED v3.0] The system shall animate the drone icon along the recorded GPS track at the configured playback speed, interpolating position between log samples using linear interpolation.
+FR-24-05 [ADDED v3.0] The system shall provide a timeline scrubber control below the map, displaying: total flight duration, current playback time, and a draggable thumb for non-linear navigation to any point in the log.
+FR-24-06 [ADDED v3.0] The system shall support playback speed control: 0.25x, 0.5x, 1x, 2x, 5x, and 10x, selectable from a speed selector adjacent to the timeline scrubber.
+FR-24-07 [ADDED v3.0] The system shall synchronise all telemetry dashboard values (altitude, speed, heading, battery, GNSS) with the replay timeline, updating them frame-by-frame as the drone icon moves.
+FR-24-08 [ADDED v3.0] The system shall synchronise time-series telemetry graphs (FR-07-06) with the replay timeline, displaying a vertical cursor line on the graph that tracks the current playback position.
+FR-24-09 [ADDED v3.0] The system shall display event markers on the replay timeline for significant logged events (mode change, RTH trigger, photo capture, battery warning, geofence breach), and highlight the corresponding map position when the scrubber passes an event.
+FR-24-10 [ADDED v3.0] The system shall allow the user to export a replay session as a KML file containing the GPS track and all timestamped event annotations.
+3.25  Airspace Awareness UI [FR-25]
+ADDED v3.0 ΓÇö Regulatory airspace overlays and warning prompts integrated into the mission planning map.
+FR-25-01 [ADDED v3.0] The system shall provide an Airspace Layer toggle in the map layer selector that, when enabled, fetches and renders airspace boundary polygons from a configured airspace data provider (e.g., OpenAIP or AirMap API).
+FR-25-02 [ADDED v3.0] The system shall render the following airspace zone categories as distinct colour-coded semi-transparent polygon overlays on the map: No-Fly Zone (NFZ) ΓÇö solid red fill; Controlled Airspace (Class AΓÇôE) ΓÇö blue outline; Restricted / Military ΓÇö hatched orange; Temporary Flight Restriction (TFR) ΓÇö yellow fill; Advisory Zone ΓÇö light grey outline.
+FR-25-03 [ADDED v3.0] The system shall display a tooltip for each airspace polygon when the user taps it, showing: zone name, zone class, altitude ceiling (AGL/MSL), active time window (if applicable), and relevant regulatory reference.
+FR-25-04 [ADDED v3.0] The system shall display a real-time airspace compliance status indicator in the HUD showing: CLEAR (green), ADVISORY (amber), or VIOLATION (red) based on the current drone position (or planned mission waypoints) relative to active airspace boundaries.
+FR-25-05 [ADDED v3.0] The system shall display a blocking warning dialog when the user attempts to place a waypoint or start a mission if any waypoint falls within a No-Fly Zone, requiring explicit acknowledgement before proceeding. The dialog shall display the name and class of the violated zone.
+FR-25-06 [ADDED v3.0] The system shall display an altitude restriction visualisation on the altitude profile chart (FR-03-04), rendering a horizontal red line at the maximum permitted altitude for the mission area, derived from the active airspace data.
+FR-25-07 [ADDED v3.0] The system shall provide an Airspace Data Last-Updated timestamp in the layer control, and display a stale data warning when airspace data is more than 24 hours old.
+FR-25-08 [ADDED v3.0] The system shall cache the last-fetched airspace data locally so that previously viewed airspace boundaries remain visible when the device is offline, displayed with a visual indicator denoting that data may be outdated.
+FR-25-09 [ADDED v3.0] The system shall display NOTAM markers on the map as pin icons when NOTAM data is available from the airspace provider, with a tap-to-expand panel showing the full NOTAM text.
+3.26  Advanced Battery and Power Management UI [FR-26]
+ADDED v3.0 ΓÇö Detailed power analytics, discharge prediction, and RTH battery planning.
+FR-26-01 [ADDED v3.0] The system shall provide an Advanced Power panel within the telemetry section, accessible via a battery icon on the main dashboard.
+FR-26-02 [ADDED v3.0] The system shall display a real-time battery discharge curve graph plotting cell voltage (V) against flight time (minutes), with a moving current-position marker.
+FR-26-03 [ADDED v3.0] The system shall overlay on the discharge curve graph the following reference lines: nominal full-charge voltage, safe minimum voltage, critical voltage, and storage voltage ΓÇö each labelled with their respective threshold values.
+FR-26-04 [ADDED v3.0] The system shall calculate and display the Estimated RTH Battery Requirement: the projected battery percentage that will be consumed during a return-to-home flight from the current drone position, accounting for distance to home, current speed, and historical average current draw.
+FR-26-05 [ADDED v3.0] The system shall display a visual RTH Safe Zone indicator on the battery percentage gauge: a shaded region from 0% to the estimated RTH requirement + a 10% safety margin, coloured red to indicate the battery level at which RTH should be initiated.
+FR-26-06 [ADDED v3.0] The system shall provide a Power Consumption Prediction panel that estimates: total mission power consumption (mAh), projected battery percentage at mission end, and whether the current battery charge is sufficient to complete the loaded mission plus return to home.
+FR-26-07 [ADDED v3.0] The system shall display a Mission Feasibility indicator (FEASIBLE / MARGINAL / INSUFFICIENT) based on the power consumption prediction, updated every time the mission is modified.
+FR-26-08 [ADDED v3.0] The system shall display per-cell voltage readings for multi-cell batteries (up to 12S), highlighting any cell whose voltage deviates more than 0.1 V from the average cell voltage as a potential cell imbalance warning.
+FR-26-09 [ADDED v3.0] The system shall provide a battery charge history graph for each connected battery (identified by a unique ID from the BMS, if available), plotting charge cycles vs. capacity retention to indicate battery health degradation over time.
+FR-26-10 [ADDED v3.0] The system shall support configuration of up to 4 battery slots for multi-battery drone configurations, displaying independent voltage, current, and capacity data per slot.
+3.27  System State Management [FR-27]
+ADDED v3.0 ΓÇö Formal FSM definition with UI state indicators for all drone operational states.
+FR-27-01 [ADDED v3.0] The system shall implement and enforce a drone operational Finite State Machine (FSM) with the following states: DISCONNECTED, CONNECTED_DISARMED, PRE_ARM_CHECK, ARMED_IDLE, TAKING_OFF, IN_MISSION, LOITERING, MANUAL_CONTROL, RETURNING_HOME, LANDING, LANDED, EMERGENCY.
+FR-27-02 [ADDED v3.0] The system shall display the current FSM state prominently in the HUD status bar, using the state name and a distinct colour: DISCONNECTED (grey), CONNECTED_DISARMED (white), PRE_ARM_CHECK (amber), ARMED_IDLE (light green), TAKING_OFF (green), IN_MISSION (blue), LOITERING (cyan), MANUAL_CONTROL (yellow-green), RETURNING_HOME (orange), LANDING (orange-red), LANDED (green), EMERGENCY (red flashing).
+FR-27-03 [ADDED v3.0] The system shall enforce the following valid state transitions, blocking any UI action that would result in an invalid transition: DISCONNECTED ΓåÆ CONNECTED_DISARMED (on connection); CONNECTED_DISARMED ΓåÆ PRE_ARM_CHECK (on arm command); PRE_ARM_CHECK ΓåÆ ARMED_IDLE (all checks pass) or CONNECTED_DISARMED (check failure/disarm); ARMED_IDLE ΓåÆ TAKING_OFF (on mission start or manual takeoff); TAKING_OFF ΓåÆ IN_MISSION or MANUAL_CONTROL; IN_MISSION Γåö LOITERING; IN_MISSION ΓåÆ RETURNING_HOME (on RTH command); RETURNING_HOME ΓåÆ LANDING; LANDING ΓåÆ LANDED; ANY_ARMED_STATE ΓåÆ EMERGENCY (on emergency stop); EMERGENCY ΓåÆ CONNECTED_DISARMED (on emergency clear and disarm).
+FR-27-04 [ADDED v3.0] The system shall display a Pre-Arm Check panel during the PRE_ARM_CHECK state, listing each check item (sensor calibration, GPS lock, battery, RC signal, firmware version, geofence active) with individual pass/fail indicators and an aggregate result.
+FR-27-05 [ADDED v3.0] The system shall disable mission start, takeoff, and arm controls when any mandatory pre-arm check is in a failed state, and display a tooltip identifying the failing check.
+FR-27-06 [ADDED v3.0] The system shall display a state transition history log (last 20 transitions) accessible from the diagnostics panel, showing: previous state, new state, trigger event, and timestamp.
+FR-27-07 [ADDED v3.0] The system shall provide a visual State Transition Diagram viewer (textual/graphic panel) in the Help section, displaying all valid states and transitions as a reference for operators.
+State Transition Reference Table (informative):
+3.28  Extensibility Framework and Plugin System [FR-28]
+ADDED v3.0 ΓÇö Module management UI enabling future capability extension.
+FR-28-01 [ADDED v3.0] The system shall provide a Plugin / Module Manager screen accessible from the Settings section, listing all installed application modules (both built-in and third-party).
+FR-28-02 [ADDED v3.0] The system shall display for each module: module name, version, author, description, enabled/disabled status toggle, and required permissions.
+FR-28-03 [ADDED v3.0] The system shall allow the Administrator to enable or disable any non-core module from the Plugin Manager, with changes taking effect on the next application restart. Core modules (Map, Telemetry, Mission) shall not be disableable.
+FR-28-04 [ADDED v3.0] The system shall display a dependency warning if the user attempts to disable a module that is a dependency of another enabled module.
+FR-28-05 [ADDED v3.0] The system shall expose a documented Dart plugin interface (PluginManifest, PluginLifecycle, GCSEventBus) that third-party modules must implement to register themselves with the application and receive GCS event notifications.
+FR-28-06 [ADDED v3.0] The system shall provide a module installation flow that accepts a .gcsmodule bundle file (ZIP archive containing manifest, compiled Dart code, and assets), validates the manifest signature, and registers the module in the Plugin Manager.
+FR-28-07 [ADDED v3.0] The system shall sandbox third-party modules, restricting their access to only the API surfaces declared in their manifest, and preventing direct access to the application's internal Domain and Data layers.
+FR-28-08 [ADDED v3.0] The system shall display a Module Health indicator in the Plugin Manager for each enabled module, showing its last-known status (Running, Idle, Error) and an error message if applicable.
+FR-28-09 [ADDED v3.0] The system shall log all module lifecycle events (load, start, stop, error, unload) to the system log (FR-17-01) with module name and timestamp.
+3.29  Multi-Vehicle Management Interface [FR-29]
+ADDED v3.0 ΓÇö Simultaneous display and control of multiple UAV platforms.
+FR-29-01 [ADDED v3.0] The system shall support the simultaneous display of up to 4 connected vehicles on the shared mission map, each represented by a distinct drone icon with a unique colour and vehicle ID label.
+FR-29-02 [ADDED v3.0] The system shall maintain an independent connection, telemetry stream, and mission state for each connected vehicle, isolated from other vehicles' data.
+FR-29-03 [ADDED v3.0] The system shall provide a Vehicle Selector widget in the top navigation bar, displaying a mini-card for each connected vehicle showing: vehicle ID, vehicle type icon, current state (FSM), and battery percentage. Tapping a vehicle card sets it as the active vehicle.
+FR-29-04 [ADDED v3.0] The system shall designate one vehicle as the Active Vehicle at all times. All mission planning, manual control, telemetry dashboard, and command actions shall apply to the Active Vehicle only, unless explicitly specified otherwise.
+FR-29-05 [ADDED v3.0] The system shall display independent mini-telemetry panels for all non-active vehicles in a collapsible side panel, showing: battery, altitude, speed, and state for each.
+FR-29-06 [ADDED v3.0] The system shall allow the user to assign independent missions to each connected vehicle, accessible by switching the Active Vehicle before loading or editing a mission.
+FR-29-07 [ADDED v3.0] The system shall provide a Broadcast Command feature that sends a specified command (e.g., RTH, Land, Pause) to all connected vehicles simultaneously, with a confirmation dialog listing all vehicles that will be affected.
+FR-29-08 [ADDED v3.0] The system shall display a conflict warning on the map if the projected flight paths of any two vehicles are calculated to intersect within a configurable proximity threshold (default: 10 m horizontal, 5 m vertical).
+FR-29-09 [ADDED v3.0] The system shall provide a connection configuration dialog independently for each vehicle slot, allowing each vehicle to use a different connection type and address.
+4. Non-Functional Requirements
+Sections 4.1 through 4.7 carry forward all NFRs from SRS v2.0. New and enhanced requirements are marked [ADDED v3.0].
+4.1 Performance
+NFR-01-01 The application shall launch and reach the main map screen within 3 seconds on a mid-range Android device (2 GB RAM, Snapdragon 665). [v2.0]
+NFR-01-02 Map interactions (pan, zoom) shall maintain a minimum frame rate of 60 fps on supported devices. [v2.0]
+NFR-01-03 Mission save and load operations shall complete within 500 milliseconds for missions containing up to 100 waypoints. [v2.0]
+NFR-01-04 Simulation telemetry update rendering shall not cause visible jank (frame drops below 30 fps) on target devices. [v2.0]
+NFR-01-05 Telemetry graph rendering shall update within 100 ms of receiving new data values. [v2.0]
+NFR-01-06 PID response curve graph shall update within 200 ms of any slider or input change. [v2.0]
+NFR-01-07 The survey grid auto-generation algorithm shall produce a complete waypoint set for a 100-hectare polygon within 2 seconds. [v2.0]
+NFR-01-08 [ADDED v3.0] The manual control virtual joystick input shall be sampled and transmitted at a minimum of 20 Hz, and the UI channel value readouts shall update within 50 ms of a joystick position change.
+NFR-01-09 [ADDED v3.0] The end-to-end latency from a manual joystick input event to the transmission of the corresponding MAVLink RC_CHANNELS_OVERRIDE message shall not exceed 100 ms on a Wi-Fi connection.
+NFR-01-10 [ADDED v3.0] The camera live feed panel shall display frames with a maximum end-to-end latency of 500 ms from capture to display when connected via RTSP over a local Wi-Fi network.
+NFR-01-11 [ADDED v3.0] The mission replay animation shall maintain smooth playback (minimum 30 fps interpolated position updates) for flight logs up to 6 hours in duration without pre-loading the entire log into memory.
+NFR-01-12 [ADDED v3.0] Airspace polygon overlays shall render within 2 seconds of the map reaching a stable zoom level, and shall not block map interaction during loading.
+4.2 Usability
+NFR-02-01 The primary mission planning workflow shall be completable by a first-time user in under 3 minutes. [v2.0]
+NFR-02-02 All interactive controls shall have touch targets of at least 48 ├ù 48 dp. [v2.0]
+NFR-02-03 The application shall provide contextual tooltips or onboarding hints for all primary controls on first launch. [v2.0]
+NFR-02-04 Error messages shall be human-readable, specific, and include a suggested remedial action. [v2.0]
+NFR-02-05 The sensor calibration workflow shall be completable by a non-expert technician without external documentation. [v2.0]
+NFR-02-06 All dangerous or irreversible actions shall require a minimum of two explicit user interactions. [v2.0]
+NFR-02-07 [ADDED v3.0] The Emergency Stop button (FR-08-07) shall be reachable within at most 2 taps from any screen in the application.
+NFR-02-08 [ADDED v3.0] The manual control joystick UI shall be usable with single-hand tablet operation; all critical controls shall be reachable within the natural thumb-arc of a 10-inch tablet in landscape orientation.
+NFR-02-09 [ADDED v3.0] The FSM state indicator shall be continuously visible on all operational screens (map, telemetry, manual control, camera); it shall not be hidden by any collapsible panel in its default state.
+4.3 Scalability
+NFR-03-01 The local mission library shall support storage of a minimum of 500 missions without performance degradation. [v2.0]
+NFR-03-02 The architecture shall support integration of a remote REST API with changes confined to the Data Layer only. [v2.0]
+NFR-03-03 The telemetry logging system shall sustain continuous recording at 4 Hz for a minimum of 6-hour flight duration. [v2.0]
+NFR-03-04 The UI component library shall support addition of new vehicle type modules without architectural changes. [v2.0]
+NFR-03-05 [ADDED v3.0] The multi-vehicle management system shall support the addition of vehicle types without requiring changes to the Presentation or Domain layers, using a vehicle adapter pattern.
+NFR-03-06 [ADDED v3.0] The plugin framework shall support a minimum of 20 simultaneously loaded third-party modules without measurable impact on application launch time or runtime frame rate.
+4.4 Reliability
+NFR-04-01 The application shall not crash or lose unsaved mission data in the event of an unexpected interruption on mobile. [v2.0]
+NFR-04-02 The application shall automatically save mission state every 30 seconds. [v2.0]
+NFR-04-03 The application shall gracefully degrade map functionality when offline. [v2.0]
+NFR-04-04 The firmware flashing module shall implement checksum verification. [v2.0]
+NFR-04-05 The telemetry log writer shall implement error recovery within 500 ms of a transient file system error. [v2.0]
+NFR-04-06 [ADDED v3.0] The manual control subsystem shall detect loss of joystick input (no input event for > 500 ms) and display a 'JOYSTICK INPUT TIMEOUT' warning, reverting simulated channel outputs to neutral (50% throttle, centred roll/pitch/yaw).
+NFR-04-07 [ADDED v3.0] The mission replay engine shall handle corrupted or incomplete log files gracefully, skipping malformed records and notifying the user of the number of records skipped, without crashing.
+NFR-04-08 [ADDED v3.0] The system shall validate airspace polygon geometry on receipt (checking for self-intersection and coordinate validity) and silently discard malformed polygons, logging a diagnostic warning.
+4.5 Maintainability
+NFR-05-01 The codebase shall maintain a test coverage of at least 60% on Domain and Application layers. [v2.0]
+NFR-05-02 All public Dart classes and methods shall include Dart doc comments. [v2.0]
+NFR-05-03 The application shall follow the feature-first folder structure. [v2.0]
+NFR-05-04 Each advanced feature module shall be implemented as an independent feature package. [v2.0]
+NFR-05-05 [ADDED v3.0] The plugin framework API (PluginManifest, PluginLifecycle, GCSEventBus interfaces) shall be versioned using semantic versioning, and the application shall maintain backward compatibility with plugins built against the current major version.
+4.6 Security
+NFR-06-01 The Administrator PIN shall be stored using a cryptographic hash. [v2.0]
+NFR-06-02 Exported data files shall include a SHA-256 integrity checksum. [v2.0]
+NFR-06-03 The application shall not transmit data to third-party analytics without consent. [v2.0]
+NFR-06-04 [ADDED v3.0] Third-party plugin modules shall be code-signed with a developer certificate before installation. The Plugin Manager shall reject unsigned or tampered modules.
+NFR-06-05 [ADDED v3.0] The manual control command channel shall implement a cryptographic message authentication code (HMAC-SHA256) on MAVLink RC_CHANNELS_OVERRIDE messages when operating over a non-encrypted transport, to prevent command injection.
+NFR-06-06 [ADDED v3.0] Airspace and NOTAM data fetched from external APIs shall be transmitted over HTTPS with TLS 1.2 or higher; the application shall reject connections with invalid or expired certificates.
+4.7 Data Accuracy
+NFR-07-01 All coordinate displays shall be accurate to at least 6 decimal places. [v2.0]
+NFR-07-02 Distance and area calculations shall be accurate to within 0.5% using the WGS-84 ellipsoid model. [v2.0]
+NFR-07-03 Simulated telemetry values shall realistically model expected drone behaviour within ┬▒5%. [v2.0]
+NFR-07-04 [ADDED v3.0] The power consumption prediction model (FR-26-06) shall estimate mission power consumption within ┬▒15% of actual consumption for a reference multirotor platform under calm conditions, based on distance, speed profile, and empirical current draw coefficients.
+NFR-07-05 [ADDED v3.0] Mission replay GPS track interpolation shall produce position estimates within 2 m of the true trajectory between log sample points for log sample rates of 1 Hz or higher.
+4.8 Data Integrity
+ADDED v3.0 ΓÇö New NFR group covering end-to-end data correctness guarantees.
+NFR-08-01 [ADDED v3.0] All telemetry log writes shall be transactional: each sample shall be fully written and fsynced before the next sample is appended, preventing partial-record corruption on power loss.
+NFR-08-02 [ADDED v3.0] The mission data model shall enforce referential integrity: deleting a mission shall cascade-delete all associated log entries; orphaned log entries without a parent mission shall be purged on application startup.
+NFR-08-03 [ADDED v3.0] All imported mission files (.json, .waypoints, .plan) shall be validated against their respective JSON Schema or format specification before import; files failing validation shall be rejected with a descriptive error message identifying the first validation failure.
+NFR-08-04 [ADDED v3.0] The parameter list editor shall prevent write-back of parameter values that fall outside the min/max bounds defined in the parameter metadata, displaying a range violation error before transmission.
+NFR-08-05 [ADDED v3.0] All state transitions in the FSM (FR-27) shall be logged atomically with the trigger event, previous state, new state, and timestamp to the state transition history (FR-27-06), even in the event of a subsequent crash.
+4.9 UI Responsiveness Under Load
+ADDED v3.0 ΓÇö New NFR group specifying UI behaviour under concurrent high-load operations.
+NFR-09-01 [ADDED v3.0] The UI shall remain responsive (minimum 30 fps on all interactive elements) while simultaneously: rendering the live map, updating the telemetry dashboard at 4 Hz, streaming a 720p camera feed at 15 fps, and recording a telemetry log.
+NFR-09-02 [ADDED v3.0] All blocking I/O operations (file read/write, network requests, firmware upload) shall be executed on background isolates, ensuring the UI thread is never blocked for more than 16 ms.
+NFR-09-03 [ADDED v3.0] The application shall shed non-critical background tasks (log compaction, airspace data refresh, plugin health polling) when the device CPU usage exceeds 85% for more than 2 consecutive seconds, restoring them when CPU usage falls below 70%.
+NFR-09-04 [ADDED v3.0] The multi-vehicle telemetry system shall multiplex incoming MAVLink streams from all connected vehicles onto a single processing pipeline without introducing more than 50 ms additional latency per vehicle beyond the single-vehicle baseline.
+5. Use Cases
+Use Cases UC-01 through UC-10 are defined in SRS v2.0 and are carried forward without modification. New use cases UC-11 through UC-14 are added in v3.0.
+5.1 Retained Use Cases (UC-01 to UC-10)
+UC-01 Create a New Mission, UC-02 Add Waypoints, UC-03 Save and Load a Mission, UC-04 Run Mission Simulation, UC-05 Activate Return-to-Home, UC-06 Export Mission to KML, UC-07 Calibrate Vehicle Sensors, UC-08 Flash Firmware, UC-09 Tune PID Parameters, UC-10 Plan a Survey Grid Mission ΓÇö all defined in SRS v2.0 and fully applicable to v3.0.
+5.2 UC-11  Manual Control Override [ADDED v3.0]
+5.3 UC-12  Camera and Gimbal Operation [ADDED v3.0]
+5.4 UC-13  Firmware Update Failure Handling [ADDED v3.0]
+5.5 UC-14  Emergency Stop Activation [ADDED v3.0]
+6. System Diagrams (Textual Descriptions)
+6.1 Use Case Diagram (Updated v3.0)
+The v3.0 use case model extends the v2.0 model with three additional actors and multiple new use cases.
+Actor: Remote Pilot (Manual) ΓÇö New in v3.0. Interacts with: Manual Control Override (UC-11), Emergency Stop (UC-14), Sensitivity Configuration, Gamepad/Keyboard Binding.
+Actor: Drone Operator ΓÇö Extended in v3.0. Adds: Camera and Gimbal Operation (UC-12), Mission Replay, Airspace Awareness, Power Management View, Multi-Vehicle Management.
+Actor: Technician / Administrator ΓÇö Extended in v3.0. Adds: Firmware Failure Handling (UC-13), Plugin Management.
+Actor: Airspace Data Provider (External System) ΓÇö New in v3.0. Supplies airspace polygon and NOTAM data to the Airspace Layer.
+Actor: Camera Payload / Gimbal (Hardware, Future) ΓÇö New in v3.0. Receives gimbal commands and photo/video capture commands from the Camera Control module.
+Key Relationships (new in v3.0): 'Manual Control Override' extends 'Mission Execution Control'. 'Emergency Stop' extends 'Manual Control Override' and 'Mission Execution Control'. 'Camera Operation' includes 'Gimbal Control' and 'Media Capture'. 'Mission Replay' includes 'Telemetry Playback'. 'Airspace Awareness' is an include of 'Mission Planning'. 'Multi-Vehicle Management' includes 'Vehicle Selector' and 'Broadcast Command'.
+6.2 High-Level Frontend Architecture Diagram (Updated v3.0)
+Dependency Rule: Each layer depends only on layers below it. Domain Layer has zero external dependencies. Infrastructure Layer implements interfaces defined in the Domain Layer via the Repository and Service patterns. The plugin framework operates as a guest within the Presentation and Application layers, communicating exclusively via the GCSEventBus.
+7. UI Architecture [ADDED v3.0]
+7.1 Navigation Flow and Screen Hierarchy
+The application implements a hierarchical navigation model using Flutter's Navigator 2.0 (Router API). The navigation structure is divided into two tiers: a Root Navigation level (main sections) and a Feature Navigation level (screens within each section).
+7.1.1 Root Navigation ΓÇö Main Drawer
+The application's primary navigation surface is a persistent side navigation drawer accessible from any root screen via a hamburger icon or swipe gesture. The drawer contains the following top-level destinations:
+7.1.2 Contextual Navigation ΓÇö HUD Quick-Access
+During active flight (any armed FSM state), the HUD overlays the map with the following quick-access navigation buttons, always visible and requiring at most one tap:
+Camera icon ΓåÆ CameraPayloadScreen (floating panel overlay)
+Manual Control icon ΓåÆ ManualControlScreen (full-screen takeover)
+Telemetry icon ΓåÆ collapsible TelemetryDashboard panel
+FSM State badge ΓåÆ StateMachineViewer panel (tap to view transition diagram)
+Battery icon ΓåÆ PowerManagementScreen (floating panel overlay)
+Airspace icon ΓåÆ Airspace layer toggle + compliance status
+7.1.3 Modal Overlays and Dialogs
+The following interactions trigger modal overlays that block the underlying screen until dismissed:
+Waypoint property editor (bottom sheet, 60% screen height)
+Mission creation wizard (full-screen stepper dialog)
+Firmware flash progress (full-screen blocking overlay)
+Pre-arm check panel (modal bottom sheet)
+Emergency stop confirmation (full-screen countdown overlay)
+Airspace violation warning (blocking dialog)
+Plugin installation confirmation (dialog)
+7.2 Layout Structure
+7.2.1 MapScreen Layout
+The MapScreen is the application's primary workspace and implements a layered layout:
+7.2.2 ManualControlScreen Layout
+The ManualControlScreen occupies the full screen and is optimised for landscape orientation. It implements:
+Left half: Left virtual joystick (throttle/yaw) with channel value readouts above
+Right half: Right virtual joystick (pitch/roll) with channel value readouts above
+Top centre bar: FSM state badge | Manual Override status | Latency indicator | Active vehicle ID
+Bottom centre strip: Sensitivity settings access | Joystick mode selector | Camera trigger button | Return to Auto button
+HUD mini-panel (top corners): Altitude + Speed (left), Heading + Battery (right)
+Emergency Stop button: fixed bottom-centre, red, large (minimum 80├ù80dp touch target), requires 1.5s long-press
+7.2.3 CameraPayloadScreen Layout
+Primary viewport (75% width): Camera live feed with OSD overlay
+Right sidebar (25% width): Gimbal pitch/yaw sliders | Re-centre button | Follow Mode toggle | ROI Lock button
+Bottom strip: Camera settings access | ISO / shutter quick-adjust | Capture Photo | Burst toggle | Start/Stop Video
+Top bar: Storage status indicator | Recording time counter | Payload type label | Return to Map icon
+7.2.4 TelemetryDashboard Layout
+Top section: Attitude indicator (artificial horizon) | Compass rose
+Mid section: Scrollable metric card grid ΓÇö altitude, speed, vertical speed, heading, battery, signal, distance, GPS quality
+Graph panel (expandable): Time-series chart with channel selector | Replay cursor line
+Bottom section: Log viewer access | Record button | Playback controls (when in replay mode)
+7.3 Screen Hierarchy Diagram (Textual)
+The following table represents the complete screen hierarchy of the application, with parent-to-child navigation relationships:
+7.4 Interaction Flow: Manual Control Override
+The following sequence describes the complete UI interaction flow when a drone operator activates manual override during an autonomous mission:
+Operator is on MapScreen; FSM state = IN_MISSION; drone executing autonomous flight path.
+Operator taps the Manual Control HUD icon (bottom-right corner).
+System displays two-step confirmation dialog: 'Suspend autonomous mission and take manual control?' with CONFIRM and CANCEL buttons.
+Operator taps CONFIRM. System transitions FSM: IN_MISSION ΓåÆ MANUAL_CONTROL.
+ManualControlScreen slides up as a full-screen overlay (preserving map beneath).
+'MANUAL OVERRIDE ACTIVE' amber banner displayed. HUD border turns amber.
+Virtual joysticks are enabled; channel outputs reflect joystick position at 20 Hz.
+Operator manoeuvres drone; telemetry updates in real time on HUD mini-panel.
+Operator taps 'Return to Auto' button at bottom centre.
+System displays confirmation: 'Resume autonomous mission from waypoint N?' with CONFIRM/CANCEL.
+Operator confirms. FSM transitions: MANUAL_CONTROL ΓåÆ IN_MISSION. Autonomous mission resumes.
+ManualControlScreen dismisses; MapScreen map regains full focus.
+7.5 Interaction Flow: Airspace Compliance Check
+Operator is on MapScreen; places a waypoint in a No-Fly Zone.
+System detects waypoint coordinates intersect NFZ polygon from loaded airspace data.
+Waypoint marker rendered with red border and warning icon.
+System updates HUD airspace compliance badge to 'VIOLATION' (red).
+System displays non-blocking snackbar: 'Waypoint 4 is in a No-Fly Zone: ZONE_NAME. Mission cannot be started.'
+Mission Start button is disabled while any waypoint is in violation.
+Operator taps the waypoint warning icon; system displays AirspaceInfoSheet with zone details.
+Operator repositions waypoint outside NFZ; violation clears automatically.
+HUD compliance badge returns to 'CLEAR' (green). Mission Start button re-enabled.
+8. Advanced Feature Specifications
+8.1 Manual Control Input Pipeline
+The manual control input pipeline processes joystick input through the following stages:
+Raw Input Capture ΓÇö touch events or HID device events are captured at the platform layer at up to 120 Hz.
+Dead-Zone Filtering ΓÇö inputs within the configured dead-zone threshold (FR-21-11) are clamped to zero.
+Expo Curve Application ΓÇö remaining input is mapped through the configured exponential sensitivity curve (FR-21-10) to produce a normalised output value in the range [ΓêÆ1.0, +1.0] per axis.
+Channel Mapping ΓÇö normalised axis values are mapped to PWM-equivalent channel values (1000ΓÇô2000 ┬╡s) per the configured joystick mode (FR-21-03).
+Rate Limiting ΓÇö output values are rate-limited to prevent step changes > 200 ┬╡s/frame.
+Command Emission ΓÇö channel values are emitted to the ManualControlController at 20 Hz, which packages them into MAVLink RC_CHANNELS_OVERRIDE messages for transmission.
+8.2 Mission Replay Engine Architecture
+The mission replay engine implements a streaming log reader to support replay of logs exceeding device RAM capacity. The engine maintains a 30-second sliding window of log samples in memory, pre-fetching ahead of the current playback position. Position interpolation uses linear interpolation between consecutive GPS samples. Timeline event detection uses a sorted event index built during log loading, enabling O(log n) scrubber seeks. Playback speed control adjusts the timer tick interval: at 1x speed, the timer fires every 250 ms (matching the 4 Hz log rate); at 10x, it fires every 25 ms, advancing the log cursor by 10 samples per tick.
+8.3 Airspace Data Integration
+The AirspaceDataService implements the following data lifecycle:
+On map view stabilisation (after a 500 ms debounce following scroll/zoom), the service computes the current map bounding box and requests airspace data for that area from the configured provider API.
+Received GeoJSON FeatureCollection is parsed and validated (NFR-04-08).
+Valid zones are stored in the AirspaceRepository with a TTL of 24 hours.
+Expired data is flagged with a stale indicator (FR-25-07) but retained for offline display.
+The AirspaceController exposes a filtered stream of zones visible in the current viewport to the presentation layer, preventing off-screen polygon rendering.
+8.4 Power Budget Model
+The power consumption prediction model (FR-26-06) uses the following empirical formula:
+P_total = (╬ú segment_distance_i / cruise_speed) ├ù I_avg ├ù V_nominal
+Where: I_avg is the user-configured or historically measured average current draw (A), V_nominal is the configured battery nominal voltage (V), and segment_distance_i is the distance between consecutive waypoints. The model adds a hover penalty for each waypoint with hover_time > 0:
+P_hover = hover_time ├ù I_hover ├ù V_nominal  (I_hover Γëê 0.6 ├ù I_avg by default)
+RTH power estimate uses the direct distance from the final waypoint to Home point. All values are expressed in mAh and compared against the configured battery capacity (FR-13-11) to derive the feasibility indicator (FR-26-07).
+8.5 FSM Implementation Notes
+The FlightStateMachineNotifier implements the FSM as a Riverpod StateNotifier<FlightState>. State transitions are validated against a predefined transition table before being applied; invalid transitions throw an InvalidStateTransitionException which is caught by the Application layer and logged. The current state is persisted to SharedPreferences on every transition to survive application restarts. On app launch, if a persisted state is found that is incompatible with the current connection status (e.g., IN_MISSION but drone is disconnected), the FSM resets to DISCONNECTED with a user notification.
+9. Future Scope
+9.1 MAVLink Live Drone Integration
+The MavlinkService stub defined in the Infrastructure Layer will be completed to parse and generate MAVLink v2 messages over UDP, TCP, or Serial connections. This will enable all simulated features ΓÇö telemetry, manual control, camera commands, firmware flashing, and FSM state ΓÇö to operate with real ArduPilot and PX4 autopilot hardware.
+9.2 Cloud Mission Synchronisation
+A CloudMissionRepository will be added to the Data Layer, backed by a REST API with JWT authentication. Missions, flight logs, and PID profiles will be synchronisable across multiple devices.
+9.3 Advanced Multi-Vehicle Swarm Coordination
+The multi-vehicle management UI (FR-29) will be extended with a swarm mission planner supporting coordinated waypoint assignment, formation flight patterns, and vehicle-to-vehicle conflict avoidance visualisation for up to 10 vehicles.
+9.4 AI-Assisted Mission Planning and Anomaly Detection
+An on-device ML inference module will provide: optimal waypoint recommendations based on terrain and objective type, real-time anomaly detection on telemetry streams (detecting unusual altitude excursions, battery voltage drops, vibration spikes), and automated post-flight analysis report generation.
+9.5 Augmented Reality (AR) Overlay Mode
+An AR camera view mode will overlay drone position, active waypoints, and telemetry HUD onto the device's live camera feed using device orientation sensors and GNSS for geo-registration.
+9.6 Regulatory Compliance Reporting
+The application will generate automated flight compliance reports summarising: airspace zones transited, maximum altitude reached, total flight time, and any regulatory threshold exceedances ΓÇö formatted for submission to relevant aviation authorities.
+10. References
+The following sources have been consulted in the preparation of this document. All URLs were valid as of April 2026.
+22. ArduPilot Dev Team. (2024). Mission Planner ΓÇö Feature Overview and GCS Design. https://ardupilot.org/planner/docs/mission-planner-overview.html
+23. QGroundControl Dev Team. (2024). QGroundControl ΓÇö Plan View Documentation. https://docs.qgroundcontrol.com/master/en/qgc-user-guide/plan_view/plan_view.html
+24. QGroundControl Dev Team. (2024). QGroundControl ΓÇö Vehicle Setup and Sensor Calibration. https://docs.qgroundcontrol.com/master/en/qgc-user-guide/setup_view/setup_view.html
+25. QGroundControl Dev Team. (2024). QGroundControl ΓÇö Fly View and HUD. https://docs.qgroundcontrol.com/master/en/qgc-user-guide/fly_view/fly_view.html
+26. PX4 Development Team. (2024). PX4 Autopilot ΓÇö Parameters and Configuration. https://docs.px4.io/main/en/advanced_config/parameters.html
+27. PX4 Development Team. (2024). PX4 Autopilot ΓÇö PID Tuning Guide (Multicopter). https://docs.px4.io/main/en/config_mc/pid_tuning_guide_multicopter.html
+28. PX4 Development Team. (2024). PX4 Flight Modes. https://docs.px4.io/main/en/flight_modes/
+29. ArduPilot Dev Team. (2024). ArduCopter ΓÇö Tuning. https://ardupilot.org/copter/docs/tuning.html
+30. ArduPilot Dev Team. (2024). ArduCopter ΓÇö Sensor Calibration. https://ardupilot.org/copter/docs/common-accelerometer-calibration.html
+31. ArduPilot Dev Team. (2024). ArduCopter ΓÇö Flight Modes. https://ardupilot.org/copter/docs/flight-modes.html
+32. ArduPilot Dev Team. (2024). ArduCopter ΓÇö Failsafe. https://ardupilot.org/copter/docs/failsafe-landing-page.html
+33. MAVLink Project. (2024). MAVLink Common Messages and Mission Protocol. https://mavlink.io/en/messages/common.html
+34. MAVLink Project. (2024). MAVLink Mission Protocol. https://mavlink.io/en/services/mission.html
+35. MAVLink Project. (2024). MAVLink Parameter Protocol. https://mavlink.io/en/services/parameter.html
+36. MAVLink Project. (2024). MAVLink RC_CHANNELS_OVERRIDE Message. https://mavlink.io/en/messages/common.html#RC_CHANNELS_OVERRIDE
+37. MAVLink Project. (2024). MAVLink Camera Protocol v2. https://mavlink.io/en/services/camera.html
+38. Flutter Dev Team. (2024). Flutter ΓÇö Widget Catalog and State Management. https://docs.flutter.dev/ui/widgets
+39. Flutter Dev Team. (2024). Flutter ΓÇö Navigator 2.0 / Router API. https://docs.flutter.dev/ui/navigation
+40. Flutter Dev Team. (2024). Flutter ΓÇö Internationalisation and Accessibility. https://docs.flutter.dev/accessibility-and-localization/internationalization
+41. Riverpod Contributors. (2024). Riverpod Documentation ΓÇö StateNotifier and AsyncNotifier. https://riverpod.dev/docs/concepts/providers
+42. fleaflet/flutter_map Contributors. (2024). flutter_map ΓÇö Interactive Map Widget for Flutter. https://docs.fleaflet.dev/
+43. imaNNeo1f90/fl_chart Contributors. (2024). fl_chart ΓÇö A Powerful Flutter Chart Library. https://github.com/imaNNeo1f90/fl_chart
+44. Google Developers. (2024). KML Reference ΓÇö Keyhole Markup Language. https://developers.google.com/kml/documentation/kmlreference
+45. Material Design. (2024). Accessibility ΓÇö Touch Target Size Guidelines. https://m3.material.io/foundations/accessible-design/overview
+46. ISO/IEC/IEEE 29148:2018. (2018). Systems and Software Engineering ΓÇö Life Cycle Processes ΓÇö Requirements Engineering. Geneva: ISO.
+47. Sommerville, I. (2016). Software Engineering (10th ed.). Pearson Education. Chapter 4: Requirements Engineering.
+48. W3C. (2018). Web Content Accessibility Guidelines (WCAG) 2.1. https://www.w3.org/TR/WCAG21/
+49. OpenAIP. (2024). OpenAIP Airspace Data API Documentation. https://www.openaip.net/
+50. AirMap Inc. (2024). AirMap SDK ΓÇö Airspace Intelligence for Drones. https://www.airmap.com/
+51. OpenStreetMap Contributors. (2024). OpenStreetMap Tile Usage Policy. https://operations.osmfoundation.org/policies/tiles/
+52. Sutherland, I., & Hodgman, G. (1974). Reentrant polygon clipping. Communications of the ACM, 17(1), 32ΓÇô42.
+53. Haversine Formula. (2024). Movable Type Scripts ΓÇö Haversine Formula for WGS-84 Geodetic Distance. https://www.movable-type.co.uk/scripts/latlong.html
+Version | v3.0 (Production-Ready)
+Date | April 2026
+Authors | Akhil S
+Status | Final Draft ΓÇö Submission Ready
+Supersedes | SRS v2.0 (April 2026)
+Version | Change Summary
+v1.0 ΓÇö April 2026 | Initial SRS ΓÇö Basic mission planning, waypoint management, simulation, telemetry (Sections 1ΓÇô6).
+v2.0 ΓÇö April 2026 | Enhanced SRS ΓÇö Added vehicle setup (FR-13), firmware management (FR-14), PID tuning (FR-15), advanced mission planning (FR-16), diagnostics (FR-17), user roles (FR-18), notifications (FR-19), accessibility (FR-20). Extended use cases UC-07 to UC-10. Updated architecture.
+v3.0 ΓÇö April 2026 | Production-Ready SRS ΓÇö Added manual flight control (FR-21), camera/gimbal (FR-22), flight mode visualisation (FR-23), mission replay (FR-24), airspace awareness (FR-25), power management (FR-26), system state machine (FR-27), extensibility framework (FR-28), multi-vehicle management (FR-29). Added Section 7: UI Architecture. Enhanced NFRs (latency, data integrity, load). Added use cases UC-11 to UC-14. Updated architecture and references.
+Term / Acronym | Definition
+UAV | Unmanned Aerial Vehicle ΓÇö a drone operated without an onboard pilot.
+GCS | Ground Control Station ΓÇö software used to monitor and command UAVs.
+Waypoint | A defined geographic coordinate (latitude, longitude, altitude) forming a node in a flight path.
+Mission | An ordered collection of waypoints and associated flight parameters defining a UAV flight plan.
+RTH | Return-to-Home ΓÇö a safety command directing the drone to return to its launch point.
+Simulation Mode | An in-app mode that animates the drone icon along the planned path without real hardware.
+MAVLink | Micro Air Vehicle Link ΓÇö a lightweight messaging protocol for communicating with drones.
+KML | Keyhole Markup Language ΓÇö an XML-based format for geographic data used for mission export.
+SRS | Software Requirements Specification.
+FR | Functional Requirement.
+NFR | Non-Functional Requirement.
+PID | ProportionalΓÇôIntegralΓÇôDerivative ΓÇö a control loop feedback mechanism used in flight controllers.
+ESC | Electronic Speed Controller ΓÇö regulates motor speed in a UAV.
+IMU | Inertial Measurement Unit ΓÇö sensor suite measuring acceleration and angular rate.
+GNSS | Global Navigation Satellite System ΓÇö satellite-based positioning (GPS, GLONASS, BeiDou).
+HUD | Heads-Up Display ΓÇö an overlay presenting key flight data on the map screen.
+RSSI | Received Signal Strength Indicator ΓÇö measures radio link quality.
+FC | Flight Controller ΓÇö the onboard computer managing drone stabilisation and navigation.
+VTOL | Vertical Take-Off and Landing ΓÇö aircraft capable of hovering like a multirotor.
+AGL | Above Ground Level ΓÇö altitude measured from the surface beneath the drone.
+MSL | Mean Sea Level ΓÇö altitude measured from sea level.
+UC | Use Case.
+UI | User Interface.
+CRUD | Create, Read, Update, Delete ΓÇö standard data management operations.
+DTO | Data Transfer Object ΓÇö a data container used between application layers.
+HIL | Hardware-in-the-Loop ΓÇö simulation connected to real flight controller hardware.
+ROI | Region of Interest ΓÇö a target point the gimbal/camera tracks during flight.
+NOTAM | Notice to Airmen ΓÇö official notice about hazards in airspace.
+NFZ | No-Fly Zone ΓÇö airspace area where UAV operations are prohibited or restricted.
+GSD | Ground Sampling Distance ΓÇö the distance between pixel centres on the ground.
+SDK | Software Development Kit ΓÇö a set of tools for building software on a platform.
+FSM | Finite State Machine ΓÇö a computational model defining states and transitions.
+OSD | On-Screen Display ΓÇö real-time data overlay on a video feed.
+User Type | Description
+Drone Operator | Primary user. Plans missions, places waypoints, runs simulations, monitors telemetry, manages missions, and operates manual controls. May be a hobbyist, commercial pilot, surveyor, or researcher.
+System Administrator | Configures global application settings, manages user roles and permissions, accesses diagnostic and log data, manages firmware and plugins. Full access to all screens.
+Mission Reviewer | Secondary user (future). Reviews saved missions without editing. Read-only access for supervisory or client roles.
+Technician | Performs vehicle setup, sensor calibration, parameter editing, firmware management, and PID tuning. Requires advanced configuration panels.
+Remote Pilot (Manual) | Operates the drone in real-time via on-screen joystick or connected gamepad controller. Requires low-latency manual control UI.
+State | Entry Condition | Exit Condition(s) | UI Colour
+DISCONNECTED | App launch / drone disconnect | Successful connection | Grey
+CONNECTED_DISARMED | MAVLink heartbeat received | Arm command issued | White
+PRE_ARM_CHECK | Arm command accepted | All checks pass / disarm | Amber
+ARMED_IDLE | All pre-arm checks pass | Takeoff or manual command | Light Green
+TAKING_OFF | Takeoff command sent | Target altitude reached | Green
+IN_MISSION | Mission start confirmed | RTH / Pause / Manual override | Blue
+LOITERING | Loiter command or waypoint pause | Resume mission / RTH / Manual | Cyan
+MANUAL_CONTROL | Manual override activated | Auto command / Disarm | Yellow-Green
+RETURNING_HOME | RTH command or failsafe trigger | Approach home altitude | Orange
+LANDING | At home position / land command | Touchdown detected | Orange-Red
+LANDED | Touchdown confirmed | Disarm command | Green
+EMERGENCY | Emergency stop activated | Emergency cleared + disarm | Red (flashing)
+Field | Detail
+Actor | Remote Pilot (Manual) / Drone Operator
+Preconditions | Application is in IN_MISSION state (autonomous flight active); drone is connected and armed.
+Trigger | Operator taps the 'Manual Override' button on the mission execution HUD.
+Main Flow | 1. System displays a confirmation dialog: 'Take manual control? Autonomous mission will be suspended.' 2. Operator confirms. 3. System transitions FSM to MANUAL_CONTROL state. 4. System displays 'MANUAL OVERRIDE ACTIVE' amber banner. 5. Virtual joystick becomes active; channel outputs reflect joystick position. 6. Operator manoeuvres drone manually. 7. Operator taps 'Return to Auto' button. 8. System transitions FSM back to IN_MISSION, resuming from the next waypoint.
+Alternate Flow A | Operator cancels the confirmation dialog; autonomous mission continues uninterrupted.
+Alternate Flow B | Operator connects a physical gamepad before tapping Manual Override; system detects the HID device and routes input from the physical controller instead of the on-screen joystick.
+Alternate Flow C | Operator taps Emergency Stop during manual control; FSM transitions to EMERGENCY state; all channel outputs set to disarm values.
+Postconditions | Drone is under manual control or autonomous control has been resumed; state is correctly reflected in the HUD.
+Field | Detail
+Actor | Drone Operator
+Preconditions | Application is in IN_MISSION or MANUAL_CONTROL state; Camera and Payload screen is open.
+Trigger | Operator opens the Camera screen from the HUD camera icon.
+Main Flow | 1. System displays the camera live feed panel with OSD overlay. 2. Operator adjusts gimbal pitch to ΓêÆ45┬░ using the pitch slider. 3. System sends gimbal command and displays updated pitch readout. 4. Operator taps 'Capture Photo'; system sends capture command and increments the photo count. 5. Operator taps 'Start Video Recording'; red recording indicator appears with elapsed counter. 6. Operator taps 'Stop Video Recording'; recording ends and file size is updated in the storage status indicator.
+Alternate Flow A | Operator enables ROI Lock, taps a map point as the target; gimbal continuously slews to maintain the ROI in frame as the drone moves.
+Alternate Flow B | Storage indicator shows < 100 photos remaining; system displays a low-storage warning banner.
+Postconditions | Media captured and stored on drone SD card; capture event markers visible on the mission map.
+Field | Detail
+Actor | Technician / Administrator
+Preconditions | Administrator mode is active; firmware flash has been initiated (UC-08 Main Flow step 3).
+Trigger | A checksum verification failure occurs during the VERIFYING phase of the firmware flash.
+Main Flow | 1. System detects checksum mismatch between uploaded image and expected hash. 2. System transitions the firmware FSM to ERROR state. 3. System displays 'Flash Failed ΓÇö Verification Error' dialog with error code, expected hash (truncated), and actual hash (truncated). 4. System releases the navigation block, allowing the user to navigate. 5. System displays 'Retry' and 'Cancel' options. 6. Operator selects 'Retry'; system re-downloads the firmware image and re-initiates the flash sequence from the ERASING phase. 7. Second attempt succeeds; system displays success notification.
+Alternate Flow A | Operator selects 'Cancel'; system resets the Firmware Management screen to IDLE state. A warning is displayed that the FC may be in an inconsistent state and recommends physical reset.
+Alternate Flow B | Flash fails on the second retry; system displays a persistent error recommending manual recovery via USB DFU mode, and provides a link to the ArduPilot recovery documentation.
+Postconditions | Flight controller firmware is either successfully updated or the failure is documented in the system log with error details; operator is informed of recovery steps.
+Field | Detail
+Actor | Drone Operator / Remote Pilot
+Preconditions | Drone is in any armed state (ARMED_IDLE, TAKING_OFF, IN_MISSION, LOITERING, MANUAL_CONTROL, RETURNING_HOME, LANDING).
+Trigger | Operator presses and holds the Emergency Stop button for 1.5 seconds (long-press confirmation mechanism).
+Main Flow | 1. After 1.5-second hold, system displays a 1-second countdown overlay: 'EMERGENCY STOP ΓÇö Release to cancel'. 2. Operator does not release; countdown completes. 3. System transitions FSM immediately to EMERGENCY state. 4. System sends MAVLink CMD_COMPONENT_ARM_DISARM with force-disarm flag. 5. System sets all channel outputs to disarm values. 6. HUD border flashes red; audio alert sounds. 7. System logs the emergency event with timestamp and previous state. 8. System displays 'EMERGENCY STOP ACTIVATED' persistent banner with 'Clear Emergency' button. 9. Operator taps 'Clear Emergency'; system transitions to CONNECTED_DISARMED after operator confirms all is safe.
+Alternate Flow | Operator releases the button before the 1.5-second threshold; emergency stop is cancelled with no state change.
+Postconditions | Drone motors disarmed; FSM in EMERGENCY or CONNECTED_DISARMED state; emergency event recorded in state transition log.
+Layer | Components (v3.0 ΓÇö All Modules)
+Presentation Layer | Screens: MapScreen, MissionLibraryScreen, SimulationScreen, TelemetryDashboard, SettingsScreen, VehicleSetupScreen, SensorCalibrationScreen, FlightModeConfigScreen, ParameterEditorScreen, FailsafeConfigScreen, BatteryConfigScreen, ESCConfigScreen, FirmwareManagementScreen, PIDTuningScreen, SurveyPlannerScreen, LogViewerScreen, HealthDashboardScreen, UserRoleScreen, ManualControlScreen, CameraPayloadScreen, MissionReplayScreen, AirspaceMapScreen, PowerManagementScreen, StateMachineViewer, PluginManagerScreen, MultiVehicleScreen.  Widgets: WaypointMarker, FlightPathOverlay, DroneIcon, TelemetryCard, HUDOverlay, PIDSliderPanel, ResponseCurveGraph, TelemetryTimeSeriesGraph, AttitudeIndicator, CompassRose, SurveyPolygonOverlay, PreFlightChecklistCard, FirmwareProgressOverlay, VirtualJoystick, JoystickChannelReadout, GimbalSliderPanel, CameraFeedPanel, CameraOSD, MediaCaptureControls, MissionReplayTimeline, AirspacePolygonOverlay, NotamMarker, BatteryDischargeGraph, RTHBatteryGauge, PowerFeasibilityBadge, FSMStateBar, FlightModeOverlay, PluginModuleCard, VehicleSelectorWidget, MultiVehicleMiniPanel.
+Application Layer | Notifiers / Controllers: MissionNotifier, SimulationController, DroneStateNotifier, SettingsNotifier, CalibrationController, PIDTuningNotifier, FirmwareController, SurveyPlannerNotifier, TelemetryLogController, LogReplayController, UserRoleNotifier, HealthMonitorNotifier, ManualControlController, GimbalController, CameraController, MissionReplayController, AirspaceController, PowerAnalyticsNotifier, FlightStateMachineNotifier, PluginManagerController, MultiVehicleController. State containers using Riverpod StateNotifier and AsyncNotifier.
+Domain Layer | Models: Mission, Waypoint, DroneState, TelemetryData, GeoFence, AppSettings, SensorCalibrationResult, PIDProfile, FirmwareInfo, SurveyConfig, FlightLog, LogEntry, VehicleHealth, UserRole, ManualControlState, GimbalState, CameraSettings, AirspaceZone, NotamEntry, BatteryAnalytics, FlightStateMachine, PluginManifest, VehicleSlot.  Use Cases: CreateMission, SaveMission, RunSimulation, CalibrateSensor, TunePID, FlashFirmware, GenerateSurveyGrid, ReplayFlightLog, ActivateManualOverride, ControlGimbal, CaptureMedia, FetchAirspaceData, ComputePowerBudget, TransitionFSMState, RegisterPlugin, ManageMultipleVehicles.
+Data Layer | Repositories: MissionRepository (Hive), SettingsRepository (SharedPreferences), FlightLogRepository (dart:io + SQLite index), PIDProfileRepository (Hive), FirmwareRepository (HTTP client + file cache), UserRoleRepository (Hive), AirspaceRepository (HTTP + local cache), BatteryProfileRepository (Hive), PluginRegistry (SQLite), VehicleSlotRepository (Hive).  DTOs: MissionDto, WaypointDto, TelemetryDto, PIDProfileDto, FirmwareInfoDto, AirspaceZoneDto, FlightLogSampleDto.
+Infrastructure Layer | Services: GeolocationService (geolocator), SimulationEngine (timer-based), MockTelemetryService, FileExportService (path_provider + dart:io), SurveyGridEngine (geodetic calculation), TelemetryLogger (streaming file writer, gzip), FirmwareDownloadService (Dio HTTP client), ElevationService (terrain API client), ManualControlInputService (HID / keyboard), RTSPVideoService (camera stream decoder), AirspaceDataService (OpenAIP / AirMap client), PowerModelEngine (empirical battery model), PluginHostService (Dart isolate sandbox), MavlinkService (MAVLink v2 parser ΓÇö future).
+Cross-Cutting Concerns | EventBus (GCSEventBus ΓÇö broadcast channel for plugin and inter-module communication), LoggingService (structured app-wide logging), CrashReporter (local crash capture and anonymised report), PermissionsService (platform permission management), ConnectivityMonitor (network reachability), ThemeService (light/dark/custom theme state).
+Drawer Item | Target Screen / Sub-menu
+Map / Mission Planner | MapScreen (default home screen)
+Mission Library | MissionLibraryScreen ΓåÆ MissionDetailScreen
+Telemetry Dashboard | TelemetryDashboard ΓåÆ AdvancedTelemetryScreen ΓåÆ LogViewerScreen ΓåÆ ReplayScreen
+Vehicle Setup | VehicleSetupScreen ΓåÆ SensorCalibrationScreen, FlightModeConfigScreen, ParameterEditorScreen, FailsafeConfigScreen, BatteryConfigScreen, ESCConfigScreen
+Firmware Management | FirmwareManagementScreen
+PID Tuning | PIDTuningScreen
+Camera & Gimbal | CameraPayloadScreen
+Manual Control | ManualControlScreen
+Airspace | AirspaceMapScreen
+Power Management | PowerManagementScreen
+Multi-Vehicle | MultiVehicleScreen
+Plugin Manager | PluginManagerScreen
+Settings | SettingsScreen ΓåÆ UnitSystemScreen, MapProviderScreen, ThemeScreen, TelemetryThresholdsScreen, AccessibilityScreen, UserRoleScreen
+Help / About | HelpScreen ΓåÆ StateMachineViewer, FlightModeReferencePanel, OnboardingScreen
+Layer / Zone | Contents
+Background (fill) | flutter_map tile layer (satellite / street / terrain)
+Map Overlay Layer | Waypoint markers, flight path polyline, drone icon, geofence polygon, airspace overlays, survey grid, NOTAM markers, camera trigger markers
+Top Bar (60dp height) | App menu icon | Connection status | FSM state badge | Vehicle selector | Battery mini-gauge | Signal indicator | Time
+Left Sidebar (collapsed by default, 280dp expanded) | Telemetry dashboard panel ΓÇö altitude, speed, heading, battery, GNSS; collapsible sections for each metric group
+Bottom Bar (64dp height) | Mission controls: Start / Pause / Resume / Stop | RTH button | Flight mode selector | Simulation speed selector (when in sim mode)
+Bottom Sheet (variable height) | Waypoint properties editor (opens on waypoint tap); Mission summary (distance, time, waypoints)
+FAB (Floating Action Button) | Primary: Add Waypoint; Secondary FAB menu: New Mission, Survey Grid, Import Mission
+HUD Overlay (corners and edges) | Top-left: Altitude + Speed; Top-right: Heading rose; Bottom-right: Camera icon, Manual control icon; Bottom-left: Battery, Power feasibility badge
+Screen / Component | Parent / Access Method
+MapScreen (Root) | App launch ΓÇö default screen
+WaypointPropertiesSheet | MapScreen ΓÇö waypoint tap
+MissionSummarySheet | MapScreen ΓÇö mission panel button
+SurveyPlannerOverlay | MapScreen ΓÇö FAB menu
+AirspaceInfoSheet | MapScreen ΓÇö airspace polygon tap
+MissionLibraryScreen | Drawer ΓåÆ Mission Library
+MissionDetailScreen | MissionLibraryScreen ΓÇö mission card tap
+TelemetryDashboard | Drawer or HUD icon
+AdvancedTelemetryScreen | TelemetryDashboard ΓÇö expand
+LogViewerScreen | TelemetryDashboard ΓåÆ Logs
+MissionReplayScreen | LogViewerScreen ΓåÆ select log ΓåÆ Replay
+VehicleSetupScreen | Drawer ΓåÆ Vehicle Setup
+SensorCalibrationScreen | VehicleSetupScreen ΓåÆ Calibration
+FlightModeConfigScreen | VehicleSetupScreen ΓåÆ Flight Modes
+ParameterEditorScreen | VehicleSetupScreen ΓåÆ Parameters
+FailsafeConfigScreen | VehicleSetupScreen ΓåÆ Failsafe
+BatteryConfigScreen | VehicleSetupScreen ΓåÆ Battery
+ESCConfigScreen | VehicleSetupScreen ΓåÆ ESC / Motors
+FirmwareManagementScreen | Drawer ΓåÆ Firmware Management
+PIDTuningScreen | Drawer ΓåÆ PID Tuning
+CameraPayloadScreen | Drawer or HUD camera icon
+ManualControlScreen | Drawer or HUD manual icon
+JoystickSensitivityPanel | ManualControlScreen ΓåÆ Settings icon
+GamepadMappingPanel | ManualControlScreen ΓåÆ Gamepad icon
+AirspaceMapScreen | Drawer ΓåÆ Airspace
+NotamDetailPanel | AirspaceMapScreen ΓåÆ NOTAM pin tap
+PowerManagementScreen | Drawer or HUD battery icon
+MultiVehicleScreen | Drawer ΓåÆ Multi-Vehicle
+VehicleDetailPanel | MultiVehicleScreen ΓåÆ vehicle card tap
+PluginManagerScreen | Drawer ΓåÆ Plugin Manager (Admin only)
+PluginDetailPanel | PluginManagerScreen ΓåÆ module card tap
+SettingsScreen | Drawer ΓåÆ Settings
+UnitSystemScreen / MapProviderScreen / ThemeScreen / TelemetryThresholdsScreen / AccessibilityScreen / UserRoleScreen | SettingsScreen ΓÇö sub-items
+HelpScreen | Drawer ΓåÆ Help / About
+StateMachineViewer / FlightModeReferencePanel / OnboardingScreen | HelpScreen ΓÇö sub-items

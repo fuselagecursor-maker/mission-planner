@@ -7,6 +7,7 @@ class LogsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final lines = <String>[
       r'[12:01:22] INFO  heartbeat OK · FC v4.x',
       r'[12:01:22] OK    prearm: gyro warmed',
@@ -19,20 +20,20 @@ class LogsPage extends StatelessWidget {
       title: 'Logs',
       child: Container(
         decoration: BoxDecoration(
-          color: GcsColors.bgMain,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(GcsLayout.radius),
-          border: Border.all(color: GcsColors.border),
+          border: Border.all(color: scheme.outlineVariant),
         ),
         padding: const EdgeInsets.all(10),
         child: ListView.builder(
           itemCount: lines.length,
           itemBuilder: (context, i) => Text(
             lines[i],
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 12,
               height: 1.35,
-              color: GcsColors.accentSuccess,
+              color: scheme.tertiary,
             ),
           ),
         ),
@@ -52,8 +53,9 @@ class _TacticalPageScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: GcsColors.bgMain.withValues(alpha: 0.96),
+      color: scheme.surface.withValues(alpha: 0.96),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -62,8 +64,8 @@ class _TacticalPageScaffold extends StatelessWidget {
             children: [
               Text(
                 title.toUpperCase(),
-                style: const TextStyle(
-                  color: GcsColors.textMuted,
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.2,

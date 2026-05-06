@@ -50,6 +50,7 @@ class GcsRightTelemetryPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Keep map visible: panel is narrow and semi-transparent.
     // On very small windows, clamp so we never trigger a Flex overflow.
     final desiredPanelWidth = maxPanelWidth.clamp(140.0, 320.0);
@@ -91,9 +92,9 @@ class GcsRightTelemetryPanel extends StatelessWidget {
                           opacity: open ? 1 : 0,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: GcsColors.bgPanel.withValues(alpha: 0.88),
+                              color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
                               borderRadius: BorderRadius.circular(GcsLayout.radius),
-                              border: Border.all(color: GcsColors.border),
+                              border: Border.all(color: scheme.outlineVariant),
                               boxShadow: GcsLayout.panelDepth,
                             ),
                             child: Padding(
@@ -140,6 +141,7 @@ class _HandleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Large, reliable hitbox (same interaction approach as sidebar chevron).
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -152,14 +154,14 @@ class _HandleButton extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: GcsColors.bgPanel.withValues(alpha: 0.88),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: GcsColors.border),
+              border: Border.all(color: scheme.outlineVariant),
               boxShadow: open ? GcsLayout.glowCyan : null,
             ),
             child: Icon(
               open ? Icons.chevron_right : Icons.chevron_left,
-              color: GcsColors.textPrimary,
+              color: scheme.onSurface,
               size: 20,
             ),
           ),

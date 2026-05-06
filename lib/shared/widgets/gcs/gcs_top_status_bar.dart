@@ -36,6 +36,7 @@ class GcsTopStatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, c) {
         final compact = c.maxWidth < 860;
@@ -44,8 +45,8 @@ class GcsTopStatusBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
-            color: GcsColors.bgPanel,
-            border: const Border(bottom: BorderSide(color: GcsColors.border)),
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+            border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
             boxShadow: GcsLayout.panelDepth,
           ),
           child: SingleChildScrollView(
@@ -57,23 +58,23 @@ class GcsTopStatusBar extends StatelessWidget {
                 children: [
                   if (onMenu != null)
                     IconButton(
-                      icon: const Icon(Icons.menu_rounded, color: GcsColors.textPrimary),
+                      icon: Icon(Icons.menu_rounded, color: scheme.onSurface),
                       onPressed: onMenu,
                       tooltip: 'Menu',
                     ),
                   if (showLeadingGcs) ...[
                     if (!compact)
-                      const Text(
+                      Text(
                         'GCS',
                         style: TextStyle(
-                          color: GcsColors.textPrimary,
+                          color: scheme.onSurface,
                           fontWeight: FontWeight.w900,
                           fontSize: 15,
                           letterSpacing: 1.2,
                         ),
                       )
                     else
-                      const Icon(Icons.flight, color: GcsColors.textPrimary, size: 18),
+                      Icon(Icons.flight, color: scheme.onSurface, size: 18),
                     SizedBox(width: compact ? 10 : 16),
                   ],
                   _StatusPill(
@@ -118,14 +119,14 @@ class GcsTopStatusBar extends StatelessWidget {
                       color: (armed ? GcsColors.accentDanger : GcsColors.accentSuccess).withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
-                        color: (armed ? GcsColors.accentDanger : GcsColors.accentSuccess).withValues(alpha: 0.35),
+                        color: (armed ? scheme.error : scheme.tertiary).withValues(alpha: 0.35),
                       ),
                       boxShadow: armed ? GcsLayout.glowDanger : GcsLayout.glowSuccess,
                     ),
                     child: Text(
                       compact ? _systemPillText(modeLabel, systemState) : _systemPillText('MODE: $modeLabel', systemState),
-                      style: const TextStyle(
-                        color: GcsColors.textPrimary,
+                      style: TextStyle(
+                        color: scheme.onSurface,
                         fontWeight: FontWeight.w800,
                         fontSize: 12,
                         letterSpacing: 0.5,
@@ -165,12 +166,13 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: GcsColors.bgMain,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -189,8 +191,8 @@ class _StatusPill extends StatelessWidget {
           ],
           Text(
             '$label: ',
-            style: const TextStyle(
-              color: GcsColors.textMuted,
+            style: TextStyle(
+              color: scheme.onSurfaceVariant,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),

@@ -10,6 +10,7 @@ class MissionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return _TacticalPageScaffold(
       title: 'Mission',
       actions: Row(
@@ -37,43 +38,43 @@ class MissionPage extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: GcsColors.bgPanel.withValues(alpha: 0.92),
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
           borderRadius: BorderRadius.circular(GcsLayout.radius),
-          border: Border.all(color: GcsColors.border),
+          border: Border.all(color: scheme.outlineVariant),
           boxShadow: GcsLayout.panelDepth,
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Waypoint planning',
               style: TextStyle(
-                color: GcsColors.textPrimary,
+                color: scheme.onSurface,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.2,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Use the Map screen: long-press to add waypoints and tap markers for actions.',
-              style: TextStyle(color: GcsColors.textSecondary, fontSize: 12),
+              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: GcsColors.bgMain,
+                  color: scheme.surface,
                   borderRadius: BorderRadius.circular(GcsLayout.radius),
-                  border: Border.all(color: GcsColors.border),
+                  border: Border.all(color: scheme.outlineVariant),
                 ),
                 alignment: Alignment.center,
-                child: const Text(
+                child: Text(
                   'Mission list / editor panel (next)\n\n'
                   'This page is now a dedicated mission workflow,\n'
                   'separate from the always-on map.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: GcsColors.textMuted),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -97,8 +98,9 @@ class _TacticalPageScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: GcsColors.bgMain.withValues(alpha: 0.96),
+      color: scheme.surface.withValues(alpha: 0.96),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -109,8 +111,8 @@ class _TacticalPageScaffold extends StatelessWidget {
                 children: [
                   Text(
                     title.toUpperCase(),
-                    style: const TextStyle(
-                      color: GcsColors.textMuted,
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.2,

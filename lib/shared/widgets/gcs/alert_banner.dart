@@ -15,8 +15,9 @@ class AlertBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final (bg, fg, icon) = switch (alert.severity) {
-      AlertSeverity.info => (GcsColors.bgPanel, GcsColors.textPrimary, Icons.info_outline),
+      AlertSeverity.info => (scheme.surfaceContainerHighest, scheme.onSurface, Icons.info_outline),
       AlertSeverity.warning =>
         (GcsColors.accentWarning.withValues(alpha: 0.16), GcsColors.accentWarning, Icons.warning_amber_rounded),
       AlertSeverity.critical =>
@@ -30,7 +31,7 @@ class AlertBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: GcsColors.border),
+          border: Border.all(color: scheme.outlineVariant),
           boxShadow: GcsLayout.panelDepth,
         ),
         child: Row(
@@ -54,7 +55,7 @@ class AlertBanner extends StatelessWidget {
                       alert.message!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: GcsColors.textSecondary, fontSize: 12),
+                      style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ],
                 ],
@@ -64,7 +65,7 @@ class AlertBanner extends StatelessWidget {
             IconButton(
               tooltip: 'Dismiss',
               onPressed: onDismiss,
-              icon: const Icon(Icons.close, size: 18, color: GcsColors.textSecondary),
+              icon: Icon(Icons.close, size: 18, color: scheme.onSurfaceVariant),
               style: IconButton.styleFrom(
                 minimumSize: const Size(38, 38),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,

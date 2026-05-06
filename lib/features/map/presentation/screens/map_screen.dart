@@ -1215,6 +1215,7 @@ class _BottomDockOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Reserve space so the expand/collapse chevron never covers toolbar buttons.
     const reservedRight = 44.0;
     return Stack(
@@ -1243,9 +1244,9 @@ class _BottomDockOverlay extends StatelessWidget {
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      color: GcsColors.bgPanel.withValues(alpha: 0.88),
+                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
                       borderRadius: BorderRadius.circular(GcsLayout.radius),
-                      border: Border.all(color: GcsColors.border),
+                      border: Border.all(color: scheme.outlineVariant),
                       boxShadow: GcsLayout.panelDepth,
                     ),
                     padding: const EdgeInsets.fromLTRB(8, 0, 8 + reservedRight, 0),
@@ -1258,7 +1259,7 @@ class _BottomDockOverlay extends StatelessWidget {
           right: 10,
           top: 8,
           child: Material(
-            color: GcsColors.bgElevated.withValues(alpha: 0.75),
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(999),
             child: InkWell(
               borderRadius: BorderRadius.circular(999),
@@ -1268,11 +1269,11 @@ class _BottomDockOverlay extends StatelessWidget {
                 height: 32,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: GcsColors.border),
+                  border: Border.all(color: scheme.outlineVariant),
                 ),
                 child: Icon(
                   open ? Icons.expand_more : Icons.expand_less,
-                  color: GcsColors.textPrimary,
+                  color: scheme.onSurface,
                   size: 18,
                 ),
               ),
@@ -1305,12 +1306,13 @@ class _GcsBottomMissionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final outline = OutlinedButton.styleFrom(
       minimumSize: const Size(0, 36),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       visualDensity: VisualDensity.compact,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      side: const BorderSide(color: GcsColors.border),
+      side: BorderSide(color: scheme.outlineVariant),
     );
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -1373,8 +1375,10 @@ class _GcsBottomMissionRow extends StatelessWidget {
               minimumSize: const Size(0, 36),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               visualDensity: VisualDensity.compact,
-              backgroundColor: tracking ? GcsColors.accentPrimary.withValues(alpha: 0.2) : GcsColors.bgElevated,
-              foregroundColor: GcsColors.textPrimary,
+              backgroundColor: tracking
+                  ? scheme.primary.withValues(alpha: 0.18)
+                  : scheme.surfaceContainerHighest,
+              foregroundColor: scheme.onSurface,
             ),
           ),
           const SizedBox(width: 6),
@@ -1390,7 +1394,7 @@ Color _modeAccent(ColorScheme scheme, String mode) {
     'AUTO' || 'LOITER' => GcsColors.accentPrimary,
     'MANUAL' => GcsColors.accentSuccess,
     'RTH' || 'LAND' => scheme.secondary,
-    _ => GcsColors.textMuted,
+    _ => scheme.onSurfaceVariant,
   };
 }
 
@@ -1429,6 +1433,7 @@ class _HomeMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final dist = distanceM;
     final label = dist == null
         ? 'HOME'
@@ -1441,9 +1446,9 @@ class _HomeMarker extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
-          color: GcsColors.bgPanel.withValues(alpha: 0.88),
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: GcsColors.border),
+          border: Border.all(color: scheme.outlineVariant),
           boxShadow: GcsLayout.panelDepth,
         ),
         child: Row(
@@ -1457,8 +1462,8 @@ class _HomeMarker extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
-                style: const TextStyle(
-                  color: GcsColors.textPrimary,
+                style: TextStyle(
+                  color: scheme.onSurface,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.2,
@@ -1716,19 +1721,20 @@ class _PhoneGpsCollapsible extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (open) return panel;
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel.withValues(alpha: 0.92),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: IconButton(
         tooltip: 'Open phone GPS',
         onPressed: onToggle,
-        icon: const Icon(Icons.gps_fixed, color: GcsColors.textPrimary, size: 20),
+        icon: Icon(Icons.gps_fixed, color: scheme.onSurface, size: 20),
       ),
     );
   }
@@ -1942,6 +1948,7 @@ class _MapGcsQuickRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -1961,10 +1968,10 @@ class _MapGcsQuickRail extends StatelessWidget {
               child: const Icon(Icons.flight, color: GcsColors.accentPrimary, size: 16),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'GCS',
               style: TextStyle(
-                color: GcsColors.textPrimary,
+                color: scheme.onSurface,
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.2,

@@ -24,12 +24,13 @@ class MapHudOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final card = (String label, String value) => Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: GcsColors.bgPanel.withValues(alpha: 0.88),
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: GcsColors.border),
+            border: Border.all(color: scheme.outlineVariant),
             boxShadow: GcsLayout.panelDepth,
           ),
           child: Column(
@@ -38,8 +39,8 @@ class MapHudOverlay extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: GcsColors.textMuted,
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.1,
@@ -48,8 +49,8 @@ class MapHudOverlay extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
-                  color: GcsColors.textPrimary,
+                style: TextStyle(
+                  color: scheme.onSurface,
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
                 ),
@@ -98,13 +99,14 @@ class _CompassChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel.withValues(alpha: 0.88),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: Stack(
@@ -112,8 +114,8 @@ class _CompassChip extends StatelessWidget {
         children: [
           Text(
             headingDeg.toStringAsFixed(0),
-            style: const TextStyle(
-              color: GcsColors.textPrimary,
+            style: TextStyle(
+              color: scheme.onSurface,
               fontWeight: FontWeight.w900,
               fontSize: 11,
             ),

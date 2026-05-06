@@ -44,24 +44,25 @@ class GcsTelemetryDeck extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: width,
       margin: margin,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel,
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(GcsLayout.radius),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               'TELEMETRY',
               style: TextStyle(
-                color: GcsColors.textMuted,
+                color: scheme.onSurfaceVariant,
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.2,

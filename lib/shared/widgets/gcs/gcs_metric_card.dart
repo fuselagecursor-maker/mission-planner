@@ -22,6 +22,7 @@ class _GcsMetricCardState extends State<GcsMetricCard> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -36,9 +37,9 @@ class _GcsMetricCardState extends State<GcsMetricCard> {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: GcsColors.bgElevated,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(GcsLayout.radius),
-            border: Border.all(color: GcsColors.border),
+            border: Border.all(color: scheme.outlineVariant),
             boxShadow: _hover
                 ? [...GcsLayout.panelDepth, ...GcsLayout.glowCyan]
                 : GcsLayout.panelDepth,
@@ -51,14 +52,14 @@ class _GcsMetricCardState extends State<GcsMetricCard> {
                 widget.value,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: GcsColors.textPrimary,
+                      color: scheme.onSurface,
                     ),
               ),
               const SizedBox(height: 2),
               Text(
                 widget.label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: GcsColors.textSecondary,
+                      color: scheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.4,
                     ),
@@ -68,7 +69,7 @@ class _GcsMetricCardState extends State<GcsMetricCard> {
                 Text(
                   widget.subtitle!,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: GcsColors.textMuted,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
                         fontSize: 10,
                       ),
                 ),

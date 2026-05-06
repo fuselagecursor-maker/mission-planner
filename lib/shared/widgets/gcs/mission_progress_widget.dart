@@ -21,23 +21,24 @@ class MissionProgressWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!active) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel.withValues(alpha: 0.9),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             'MISSION',
             style: TextStyle(
-              color: GcsColors.textMuted,
+              color: scheme.onSurfaceVariant,
               fontSize: 10,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.2,
@@ -51,12 +52,12 @@ class MissionProgressWidget extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'WP $wpIndex / $wpTotal',
-                style: const TextStyle(color: GcsColors.textPrimary, fontWeight: FontWeight.w900),
+                style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w900),
               ),
               const SizedBox(width: 10),
               Text(
                 '$distToNextM m',
-                style: const TextStyle(color: GcsColors.textSecondary, fontWeight: FontWeight.w800),
+                style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -66,14 +67,14 @@ class MissionProgressWidget extends StatelessWidget {
             child: LinearProgressIndicator(
               minHeight: 6,
               value: (completionPct.clamp(0, 100)) / 100.0,
-              backgroundColor: GcsColors.bgMain,
+              backgroundColor: scheme.surface,
               color: GcsColors.accentPrimary.withValues(alpha: 0.9),
             ),
           ),
           const SizedBox(height: 6),
           Text(
             '$completionPct% complete',
-            style: const TextStyle(color: GcsColors.textMuted, fontSize: 11, fontWeight: FontWeight.w800),
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w800),
           ),
         ],
       ),

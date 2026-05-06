@@ -23,15 +23,16 @@ class GcsLeftControlRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final w = compact ? 64.0 : 192.0;
     return Container(
       width: w,
       margin: const EdgeInsets.only(left: 8, right: 4),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel,
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(GcsLayout.radius),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: Column(
@@ -100,6 +101,7 @@ class _GcsPillButtonState extends State<_GcsPillButton> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -111,7 +113,7 @@ class _GcsPillButtonState extends State<_GcsPillButton> {
           boxShadow: _hover ? widget.glow : null,
         ),
         child: Material(
-          color: GcsColors.bgElevated,
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(GcsLayout.radius),
           child: InkWell(
             borderRadius: BorderRadius.circular(GcsLayout.radius),
@@ -162,6 +164,7 @@ class _GcsOutlineButtonState extends State<_GcsOutlineButton> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -169,11 +172,11 @@ class _GcsOutlineButtonState extends State<_GcsOutlineButton> {
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(GcsLayout.radius),
-          border: Border.all(color: GcsColors.border),
+          border: Border.all(color: scheme.outlineVariant),
           boxShadow: _hover ? GcsLayout.glowCyan : null,
         ),
         child: Material(
-          color: GcsColors.bgMain,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(GcsLayout.radius),
           child: InkWell(
             borderRadius: BorderRadius.circular(GcsLayout.radius),
@@ -181,16 +184,16 @@ class _GcsOutlineButtonState extends State<_GcsOutlineButton> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
               child: widget.label.isEmpty
-                  ? Icon(widget.icon, color: GcsColors.textPrimary, size: 20)
+                  ? Icon(widget.icon, color: scheme.onSurface, size: 20)
                   : Row(
                       children: [
-                        Icon(widget.icon, color: GcsColors.textSecondary, size: 16),
+                        Icon(widget.icon, color: scheme.onSurfaceVariant, size: 16),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             widget.label,
-                            style: const TextStyle(
-                              color: GcsColors.textSecondary,
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
                               fontWeight: FontWeight.w700,
                               fontSize: 10,
                             ),
@@ -236,6 +239,7 @@ class _EmergencyStopState extends State<_EmergencyStop> with SingleTickerProvide
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final t = widget.pulse ? 0.55 + 0.45 * _c.value : 0.0;
     return ListenableBuilder(
       listenable: _c,
@@ -255,7 +259,7 @@ class _EmergencyStopState extends State<_EmergencyStop> with SingleTickerProvide
           child: FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: GcsColors.accentDanger,
-              foregroundColor: GcsColors.bgMain,
+              foregroundColor: scheme.onError,
               padding: EdgeInsets.symmetric(vertical: widget.compact ? 10 : 14, horizontal: 8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(GcsLayout.radius)),
             ),

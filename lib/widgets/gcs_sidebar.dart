@@ -27,6 +27,7 @@ class GcsSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Hard width cap to prevent any sidebar child from expanding.
     final w = gcsSidebarWidth(collapsed);
     return AnimatedContainer(
@@ -35,9 +36,9 @@ class GcsSidebar extends StatelessWidget {
       width: w,
       constraints: BoxConstraints(maxWidth: w),
       decoration: BoxDecoration(
-        color: GcsColors.bgPanel.withValues(alpha: 0.88),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(GcsLayout.radius),
-        border: Border.all(color: GcsColors.border),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: GcsLayout.panelDepth,
       ),
       child: ListView(
@@ -49,9 +50,9 @@ class GcsSidebar extends StatelessWidget {
               collapsed: collapsed,
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Divider(height: 12, color: GcsColors.border),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Divider(height: 12, color: scheme.outlineVariant),
           ),
           _SidebarItems(
             section: section,
@@ -74,6 +75,7 @@ class _SidebarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       height: 56,
       child: Padding(
@@ -93,13 +95,13 @@ class _SidebarHeader extends StatelessWidget {
             ),
             if (!collapsed) ...[
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'GCS',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: GcsColors.textPrimary,
+                    color: scheme.onSurface,
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
@@ -129,6 +131,7 @@ class _SidebarItems extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Column(
@@ -165,7 +168,7 @@ class _SidebarItems extends StatelessWidget {
             onTap: () => onSelect(GcsNavSection.settings),
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: GcsColors.border),
+          Divider(height: 1, color: scheme.outlineVariant),
           const SizedBox(height: 12),
           _NavItem(
             icon: Icons.apps_rounded,
@@ -197,11 +200,12 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final bg = active ? GcsColors.accentPrimary.withValues(alpha: 0.14) : Colors.transparent;
     final border = active
         ? GcsColors.accentPrimary.withValues(alpha: 0.30)
-        : GcsColors.border;
-    final fg = active ? GcsColors.accentPrimary : GcsColors.textPrimary;
+        : scheme.outlineVariant;
+    final fg = active ? GcsColors.accentPrimary : scheme.onSurface;
 
     return Material(
       color: Colors.transparent,

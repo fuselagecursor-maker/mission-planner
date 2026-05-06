@@ -39,10 +39,10 @@ class SettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             _ToggleTile(
-              title: 'Dark mode',
-              subtitle: 'Tactical UI (recommended)',
-              value: theme.mode != ThemeMode.light,
-              onChanged: (v) => theme.setMode(v ? ThemeMode.dark : ThemeMode.light),
+              title: 'Force light mode',
+              subtitle: 'Override all pages to use the Light theme',
+              value: theme.mode == ThemeMode.light,
+              onChanged: (v) => theme.setMode(v ? ThemeMode.light : ThemeMode.dark),
             ),
             Divider(height: 1, color: scheme.outlineVariant),
             _ToggleTile(
