@@ -1,0 +1,14 @@
+.git
+.github
+.dart_tool
+.build
+build
+**/node_modules
+backend/node_modules
+FC firmware
+FC firmware.zip
+*.docx
+.env
+.env.*
+**/.env
+**/.env.*
