@@ -85,7 +85,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Register pilot credentials for Mission Planner access.',
+                          'Register pilot credentials for Fuselage access.',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),

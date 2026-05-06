@@ -19,7 +19,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final _steps = <String>[
-    'Booting GCS UI…',
+    'Booting Fuselage UI…',
     'Loading vehicle profiles…',
     'Loading cached missions…',
     'Initializing modules…',
@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
               Icon(Icons.flight, size: 64, color: scheme.primary),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Drone Mission Planner',
+                'Fuselage',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),

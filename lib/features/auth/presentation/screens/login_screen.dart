@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Authenticate pilot access to Mission Planner',
+                          'Authenticate pilot access to Fuselage',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),

@@ -26,7 +26,7 @@ class _MissionPlannerAppState extends State<MissionPlannerApp> {
           animation: Listenable.merge([_theme, _settings]),
           builder: (context, _) {
             return MaterialApp(
-              title: 'Mission Planner',
+              title: 'Fuselage',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.light(),
               darkTheme: AppTheme.dark(),

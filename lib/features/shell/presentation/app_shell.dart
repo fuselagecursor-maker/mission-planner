@@ -164,7 +164,7 @@ String _titleForIndex(int i) {
     case 4:
       return 'Settings';
     default:
-      return 'Mission Planner';
+      return 'Fuselage';
   }
 }
 

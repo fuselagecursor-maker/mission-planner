@@ -31,7 +31,7 @@ class HelpAboutScreen extends StatelessWidget {
                     Icon(Icons.airplanemode_active, size: 40, color: scheme.primary),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Drone GCS — Mission Planner',
+                      'Fuselage — GCS',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -132,7 +132,7 @@ class HelpAboutScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Text(
-              'UI structure follows Drone GCS SRS v3.0 concepts (navigation drawer, '
+              'UI structure follows Fuselage GCS SRS v3.0 concepts (navigation drawer, '
               'map-centric HUD, mission lifecycle). Replace dummy data with real '
               'services when integrating.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(

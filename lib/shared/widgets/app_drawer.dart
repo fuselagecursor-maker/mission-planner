@@ -50,7 +50,7 @@ class AppDrawer extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Drone GCS',
+                                  'Fuselage',
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.w900,
                                         letterSpacing: -0.2,
@@ -58,7 +58,7 @@ class AppDrawer extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Mission Planner • Dashboard',
+                                  'GCS • Dashboard',
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
