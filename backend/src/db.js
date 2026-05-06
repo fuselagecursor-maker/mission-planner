@@ -1,15 +1,29 @@
 const { Pool } = require("pg");
 
-/** Railway/public Postgres often requires TLS; localhost does not. */
+/**
+ * Railway public proxy (rlwy.net) needs TLS.
+ * Private network URLs (*.railway.internal) must not use SSL — enabling it breaks the pool.
+ */
 function sslOption() {
   if (process.env.DB_SSL === "false") return false;
   if (process.env.DB_SSL === "true") return { rejectUnauthorized: false };
-  const host = process.env.DB_HOST || "";
-  const fromUrl =
-    typeof process.env.DATABASE_URL === "string" && /railway/i.test(process.env.DATABASE_URL);
-  if (host.includes("rlwy.net") || fromUrl) {
+
+  const url = typeof process.env.DATABASE_URL === "string" ? process.env.DATABASE_URL : "";
+  if (/rlwy\.net/i.test(url)) {
     return { rejectUnauthorized: false };
   }
+  if (/railway\.internal|localhost|127\.0\.0\.1/i.test(url)) {
+    return false;
+  }
+
+  const host = process.env.DB_HOST || "";
+  if (host.includes("rlwy.net")) {
+    return { rejectUnauthorized: false };
+  }
+  if (host.includes("railway.internal") || host === "localhost" || host === "127.0.0.1") {
+    return false;
+  }
+
   return false;
 }
 

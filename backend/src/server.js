@@ -21,7 +21,12 @@ app.get("/health", async (_req, res) => {
     await db.query("SELECT 1");
     res.status(200).json({ status: "ok", db: "up" });
   } catch (error) {
-    res.status(500).json({ status: "error", db: "down", detail: error.message });
+    const detail =
+      error && typeof error === "object" && "message" in error && error.message
+        ? String(error.message)
+        : String(error);
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : undefined;
+    res.status(500).json({ status: "error", db: "down", detail, ...(code ? { code } : {}) });
   }
 });
 
