@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../auth/auth_session.dart';
 import '../../features/airspace/presentation/screens/airspace_screen.dart';
 import '../../features/camera/presentation/screens/camera_payload_screen.dart';
 import '../../features/manual_control/presentation/screens/manual_control_screen.dart';
@@ -24,6 +25,7 @@ import '../../features/mission/presentation/screens/mission_details_screen.dart'
 import '../../features/mission/presentation/screens/mission_editor_screen.dart';
 import '../../features/mission/presentation/screens/mission_wizard_screen.dart';
 import '../../features/dashboard/presentation/screens/alerts_inbox_screen.dart';
+import '../../features/auth/presentation/screens/admin_registration_requests_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../screens/gcs_shell.dart';
@@ -34,6 +36,7 @@ abstract final class AppRoutes {
   static const splash = '/splash';
   static const auth = '/auth';
   static const register = '/register';
+  static const adminRegistrationRequests = '/admin/registration-requests';
   static const shell = '/';
   static const missionDetails = '/mission-details';
   static const missionWizard = '/mission-wizard';
@@ -90,6 +93,14 @@ abstract final class AppRouter {
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (_) => const RegisterScreen(),
+        );
+
+      case AppRoutes.adminRegistrationRequests:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => AuthSession.instance.isAdmin
+              ? const AdminRegistrationRequestsScreen()
+              : const _AdminAccessDeniedScreen(),
         );
 
       case AppRoutes.missionDetails:
@@ -238,6 +249,28 @@ abstract final class AppRouter {
           builder: (_) => _UnknownRouteScreen(routeName: settings.name),
         );
     }
+  }
+}
+
+/// Shown when a non-admin opens an admin-only route (pilots never see the real admin UI).
+class _AdminAccessDeniedScreen extends StatelessWidget {
+  const _AdminAccessDeniedScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Access denied')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'This area is only available to administrators.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ),
+      ),
+    );
   }
 }
 

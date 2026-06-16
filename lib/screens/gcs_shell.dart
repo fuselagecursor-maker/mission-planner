@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/gcs/gcs_status_model.dart';
+import '../core/auth/auth_session.dart';
 import '../core/routing/app_router.dart';
 import '../core/theme/gcs_tokens.dart';
 import '../features/map/presentation/screens/map_screen.dart';
@@ -92,6 +93,15 @@ class _GcsShellState extends State<GcsShell> {
                     ),
                   ),
                   Divider(height: 1, color: scheme.outlineVariant),
+                  if (AuthSession.instance.isAdmin) ...[
+                    tile(
+                      icon: Icons.how_to_reg_rounded,
+                      title: 'Registration requests',
+                      subtitle: 'Approve new pilot accounts',
+                      route: AppRoutes.adminRegistrationRequests,
+                    ),
+                    Divider(height: 1, color: scheme.outlineVariant),
+                  ],
                   tile(
                     icon: Icons.sensors_rounded,
                     title: 'Telemetry',

@@ -26,12 +26,12 @@ class MapViewport extends StatelessWidget {
     this.vehicle,
     this.vehicleListenable,
     this.controller,
-    this.initialCenter = const LatLng(12.9716, 77.5946), // placeholder
-    this.initialZoom = 12,
+    this.initialCenter = const LatLng(20, 0),
+    this.initialZoom = 3,
     this.tileUrlTemplate = MapTileTemplates.osm,
-    this.showAirspaceOverlay = false,
     this.enhanceTiles = true,
     this.trackPolylines,
+    this.landPolygons = const [],
     this.extraPolylines = const [],
     this.extraCircles = const [],
     this.extraMarkers = const [],
@@ -50,12 +50,13 @@ class MapViewport extends StatelessWidget {
   final LatLng initialCenter;
   final double initialZoom;
   final String tileUrlTemplate;
-  final bool showAirspaceOverlay;
   final bool enhanceTiles;
 
   /// When non-empty, drawn as the primary GPS track (e.g. speed-coloured replay segments).
   /// If null/empty, falls back to a single-stroke [path] polyline.
   final List<Polyline>? trackPolylines;
+  /// Filled regions (e.g. land plot from boundary waypoints).
+  final List<Polygon> landPolygons;
   final List<Polyline> extraPolylines;
   final List<CircleMarker> extraCircles;
   final List<Marker> extraMarkers;
@@ -140,21 +141,9 @@ class MapViewport extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (showAirspaceOverlay)
+                if (landPolygons.isNotEmpty)
                   PolygonLayer(
-                    polygons: [
-                      Polygon(
-                        points: const [
-                          LatLng(12.9735, 77.599),
-                          LatLng(12.9765, 77.599),
-                          LatLng(12.9765, 77.605),
-                          LatLng(12.9735, 77.605),
-                        ],
-                        color: Colors.red.withValues(alpha: 0.18),
-                        borderColor: Colors.red.withValues(alpha: 0.55),
-                        borderStrokeWidth: 2,
-                      ),
-                    ],
+                    polygons: landPolygons,
                   ),
                 if (trackPolylines != null && trackPolylines!.isNotEmpty)
                   PolylineLayer(
@@ -224,6 +213,7 @@ class MapViewport extends StatelessWidget {
                             label: wp.label,
                             isViolation: wp.isViolation,
                             selected: wp.selected,
+                            onPanUpdate: wp.onPanUpdate,
                             onTap: onWaypointTap == null
                                 ? null
                                 : () => onWaypointTap!(wp.id, wp.point),
@@ -278,6 +268,7 @@ class MapWaypoint {
     required this.point,
     this.isViolation = false,
     this.selected = false,
+    this.onPanUpdate,
   });
 
   final String id;
@@ -285,6 +276,8 @@ class MapWaypoint {
   final LatLng point;
   final bool isViolation;
   final bool selected;
+  /// Drag the marker on the map to reposition (screen delta → lat/lng in parent).
+  final void Function(DragUpdateDetails details)? onPanUpdate;
 }
 
 class MapVehicle {
@@ -370,6 +363,7 @@ class _WaypointMarker extends StatefulWidget {
     required this.label,
     required this.isViolation,
     required this.selected,
+    this.onPanUpdate,
     this.onTap,
   });
 
@@ -378,6 +372,7 @@ class _WaypointMarker extends StatefulWidget {
   final String label;
   final bool isViolation;
   final bool selected;
+  final void Function(DragUpdateDetails details)? onPanUpdate;
   final VoidCallback? onTap;
 
   @override
@@ -395,62 +390,72 @@ class _WaypointMarkerState extends State<_WaypointMarker> {
     final border = widget.isViolation ? scheme.error : scheme.primary;
     final scale = widget.selected || _hover ? 1.08 : 1.0;
 
-    return Center(
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutCubic,
-          scale: scale,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: widget.onTap,
-              child: Ink(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: bg,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: widget.selected ? scheme.primary : border,
-                    width: widget.selected ? 2.4 : 1.2,
+    final inner = AnimatedScale(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      scale: scale,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: widget.onTap,
+          child: Ink(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: bg,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: widget.selected ? scheme.primary : border,
+                width: widget.selected ? 2.4 : 1.2,
+              ),
+              boxShadow: [
+                if (widget.selected)
+                  BoxShadow(
+                    color: scheme.primary.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    spreadRadius: 0,
                   ),
-                  boxShadow: [
-                    if (widget.selected)
-                      BoxShadow(
-                        color: scheme.primary.withValues(alpha: 0.4),
-                        blurRadius: 8,
-                        spreadRadius: 0,
-                      ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      widget.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: fg,
-                          ),
-                    ),
-                  ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: fg,
+                      ),
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+
+    final withPan = widget.onPanUpdate != null
+        ? GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onPanUpdate: widget.onPanUpdate,
+            child: inner,
+          )
+        : inner;
+
+    return Center(
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: withPan,
       ),
     );
   }

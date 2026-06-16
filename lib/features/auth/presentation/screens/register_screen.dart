@@ -37,16 +37,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _status = null;
     });
     try {
-      await _api.register(
+      final result = await _api.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         pilotId: _pilotIdController.text.trim().isEmpty ? null : _pilotIdController.text.trim(),
       );
       if (!mounted) return;
+      final msg = result['message']?.toString() ??
+          'Request submitted. An admin must approve your account before you can sign in.';
       setState(() {
         _submitting = false;
-        _status = 'Pilot account created. You can sign in now.';
+        _status = msg;
       });
     } catch (e) {
       if (!mounted) return;
@@ -151,7 +153,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Text(
                             _status!,
                             style: TextStyle(
-                              color: _status!.toLowerCase().contains('created') ? scheme.primary : scheme.error,
+                              color: _status!.toLowerCase().contains('fail') || _status!.toLowerCase().contains('error')
+                                ? scheme.error
+                                : scheme.primary,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),

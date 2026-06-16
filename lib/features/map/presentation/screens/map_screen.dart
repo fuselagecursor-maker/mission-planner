@@ -11,6 +11,8 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../shared/widgets/status_pill.dart';
 import '../../../../shared/widgets/emergency_stop_button.dart';
 import '../../../../shared/widgets/buttons/gradient_button.dart';
+import '../../../mission/domain/agri_waypoint_kind.dart';
+import '../../../mission/presentation/models/mission_waypoint_editor_values.dart';
 import '../../../mission/presentation/widgets/waypoint_property_sheet.dart';
 import '../../../mission/presentation/widgets/mission_storage_dialogs.dart';
 import '../../../../shared/widgets/gcs/alert_banner.dart';
@@ -18,11 +20,11 @@ import '../../../../shared/widgets/gcs/manual_control_panel.dart';
 import '../../../../shared/widgets/gcs/map_hud_overlay.dart';
 import '../../../../shared/widgets/gcs/rth_feedback_widget.dart';
 import '../../../../shared/widgets/gcs/mission_progress_widget.dart';
-import '../logic/airspace_map.dart';
 import '../logic/simulated_telemetry.dart';
 import '../widgets/map_layers_sheet.dart';
 import '../widgets/map_viewport.dart';
 import '../widgets/map_zoom_rail.dart';
+import '../widgets/waypoint_nudge_pad.dart';
 import '../../../../core/theme/gcs_tokens.dart';
 import '../../../../shared/widgets/gcs/gcs_bottom_dock.dart';
 import 'package:latlong2/latlong.dart';
@@ -58,7 +60,6 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  bool _airspaceLayer = true;
   bool _satelliteBasemap = false;
   bool _showMissionGeometry = true;
   bool _showVehicleOnMap = true;
@@ -70,8 +71,14 @@ class _MapScreenState extends State<MapScreen> {
   bool _tracking = false;
   bool _armed = false;
   final _mapController = MapController();
-  static const LatLng _defaultHomePoint = LatLng(12.9716, 77.5946); // placeholder home
-  LatLng _homePoint = _defaultHomePoint;
+  /// Neutral world seed until a real GPS fix is applied (not tied to any demo city).
+  static const LatLng _worldSeed = LatLng(20, 0);
+  static const double _worldSeedZoom = 3;
+  LatLng _mapAnchor = _worldSeed;
+  double _mapInitialZoom = _worldSeedZoom;
+  LatLng? _gpsFix;
+  String? _bootstrapStatus;
+  LatLng _homePoint = _worldSeed;
   bool _homeSetFromPhone = false;
   Timer? _simTimer;
   final Distance _geoDistance = const Distance();
@@ -81,13 +88,16 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _lastTelemPos;
   final SimulatedTelemetry _telemetry = SimulatedTelemetry();
   double _vehiclePhase = 0;
-  LatLng _targetVehicle = const LatLng(12.9722, 77.5952);
-  LatLng _smoothedVehicle = const LatLng(12.9722, 77.5952);
+  LatLng _targetVehicle = _worldSeed;
+  LatLng _smoothedVehicle = _worldSeed;
   double _vehicleHeading = 0;
   late final ValueNotifier<MapVehicle?> _vehicleVn;
   DateTime _lastUiRebuildAt = DateTime.fromMillisecondsSinceEpoch(0);
   bool _dockOpen = true;
   String? _selectedWaypointId;
+  /// When set, the next map tap moves this waypoint to the tapped location.
+  String? _relocationTargetId;
+  bool _nudgeCoarse = false;
   bool _flightTrail = true;
   bool _mapHud = true;
   bool _manualControl = false;
@@ -100,17 +110,16 @@ class _MapScreenState extends State<MapScreen> {
   bool _phonePanelOpen = false;
   bool? _lastPhoneGpsSetting;
   int _rightPanelFront = 0; // 0: phone gps, 1: manual control (only used when both panels are open)
-  final List<_MissionWp> _missionWps = [
-    _MissionWp(id: 'wp-1', index: 1, point: const LatLng(12.9716, 77.5946)),
-    _MissionWp(id: 'wp-2', index: 2, point: const LatLng(12.975, 77.602)),
-  ];
+  /// Next long-press placement (default: land / field boundary vertices).
+  AgriWaypointKind _placementKind = AgriWaypointKind.fieldBoundary;
+  final List<_MissionWp> _missionWps = [];
 
   int get _waypointCount => _showMissionGeometry ? _missionWps.length : 0;
 
-  bool get _hasAirspaceViolation =>
-      _airspaceLayer && _missionWps.any((w) => w.isNfzViolation);
+  bool get _canStartMission => _preArmAllPass;
 
-  bool get _canStartMission => !_hasAirspaceViolation && _preArmAllPass;
+  int get _plotBoundaryCount =>
+      _missionWps.where((w) => w.kind == AgriWaypointKind.fieldBoundary).length;
 
   @override
   void initState() {
@@ -124,7 +133,9 @@ class _MapScreenState extends State<MapScreen> {
     final tick = kIsWeb ? const Duration(milliseconds: 100) : const Duration(milliseconds: 50);
     _simTimer = Timer.periodic(tick, (_) => _onSimTick());
 
-    // Phone GPS starts only if enabled in Settings.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_bootstrapDeviceLocation());
+    });
   }
 
   @override
@@ -153,7 +164,7 @@ class _MapScreenState extends State<MapScreen> {
       _phoneLocationStatus = null;
       _followPhone = false;
       _phonePanelOpen = false;
-      _homePoint = _defaultHomePoint;
+      _homePoint = _gpsFix ?? _worldSeed;
       _homeSetFromPhone = false;
     });
   }
@@ -217,15 +228,55 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  Future<void> _bootstrapDeviceLocation() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) {
+        if (mounted) {
+          setState(() => _bootstrapStatus = 'Location services are off. Turn them on to center the map on you.');
+        }
+        return;
+      }
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() => _bootstrapStatus = 'Location permission denied. Allow location to use your position.');
+        }
+        return;
+      }
+      final resolved = await Geolocator.getLastKnownPosition() ??
+          await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+          );
+      if (!mounted) return;
+      final here = LatLng(resolved.latitude, resolved.longitude);
+      setState(() {
+        _gpsFix = here;
+        _mapAnchor = here;
+        _mapInitialZoom = 16;
+        _homePoint = here;
+        _homeSetFromPhone = true;
+        _smoothedVehicle = here;
+        _targetVehicle = here;
+        _lastTelemPos = here;
+        _vehicleHeading = 0;
+        _vehicleVn.value = MapVehicle(point: here, headingDeg: _vehicleHeading);
+        _bootstrapStatus = null;
+      });
+      _mapController.move(here, 16);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _bootstrapStatus = 'Could not read GPS. Pan the map to your area.');
+      }
+    }
+  }
+
   Widget _mapPrimaryFab() {
     return _MapFab(
-      onAddWaypoint: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Long-press the map to add a waypoint.'),
-          ),
-        );
-      },
+      onAddWaypoint: _showPlacementKindSheet,
       onNewMission: () => Navigator.of(context).pushNamed(AppRoutes.missionWizard),
       onSurveyGrid: () {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -257,12 +308,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _syncOrbitPhaseToVehicle() {
-    const baseLat = 12.9722;
-    const baseLng = 77.5952;
-    const r = 0.0035;
-    final x = (_smoothedVehicle.latitude - baseLat) / r;
-    final y = (_smoothedVehicle.longitude - baseLng) / r;
-    _vehiclePhase = math.atan2(y, x);
+    _vehiclePhase = _vehicleHeading * math.pi / 180.0;
   }
 
   void _onSimTick() {
@@ -279,15 +325,26 @@ class _MapScreenState extends State<MapScreen> {
     if (_tracking) {
       // ~0.1 rad / s matches the old 500ms demo roughly but feels smoother at 20 Hz.
       _vehiclePhase += 0.12 * dt * (2 * math.pi);
-      const baseLat = 12.9722;
-      const baseLng = 77.5952;
-      const r = 0.0035;
+      final baseLat = _smoothedVehicle.latitude;
+      final baseLng = _smoothedVehicle.longitude;
+      const r = 0.0012;
       _targetVehicle = LatLng(
         baseLat + r * math.cos(_vehiclePhase),
         baseLng + r * math.sin(_vehiclePhase),
       );
     } else {
-      _targetVehicle = _smoothedVehicle;
+      // Dummy vehicle follows device GPS (stream) or last bootstrap fix.
+      if (_phonePos != null) {
+        _targetVehicle = LatLng(_phonePos!.latitude, _phonePos!.longitude);
+        final h = _phonePos!.heading;
+        if (h.isFinite && h >= 0 && h <= 360) {
+          _vehicleHeading = h;
+        }
+      } else if (_gpsFix != null) {
+        _targetVehicle = _gpsFix!;
+      } else {
+        _targetVehicle = _smoothedVehicle;
+      }
     }
 
     const t = 0.28; // lerp per tick toward physics target (50ms)
@@ -477,14 +534,15 @@ class _MapScreenState extends State<MapScreen> {
       widget.statusModel?.setRthStatus(active: false, phase: '—', distanceM: '—');
     }
 
-    final missionActive = _armed && _flightMode == 'AUTO' && _missionWps.length >= 2;
+    final missionActive = _armed && _flightMode == 'AUTO' && _routePathPoints.length >= 2;
     if (missionActive) {
-      final nearest = _missionWps
+      final routeOnly = <_MissionWp>[for (final w in _missionWps) if (w.kind == AgriWaypointKind.routeFlight) w];
+      final nearest = routeOnly
           .map((w) => (w, _geoDistance(w.point, _smoothedVehicle)))
           .reduce((a, b) => a.$2 < b.$2 ? a : b)
           .$1;
-      final wpIndex = nearest.index;
-      final wpTotal = _missionWps.length;
+      final wpIndex = routeOnly.indexOf(nearest) + 1;
+      final wpTotal = routeOnly.length;
       final distToNext = _geoDistance(nearest.point, _smoothedVehicle);
       final completion = ((wpIndex / math.max(1, wpTotal)) * 100).round().clamp(0, 100);
       widget.statusModel?.setMissionProgress(
@@ -539,19 +597,54 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  List<MapWaypoint> get _mapWaypoints => _missionWps
-      .map(
-        (w) => MapWaypoint(
-          id: w.id,
-          label: w.label,
-          point: w.point,
-          isViolation: w.isNfzViolation,
-          selected: w.id == _selectedWaypointId,
-        ),
-      )
-      .toList();
+  void _onWaypointPanUpdate(String id, DragUpdateDetails details) {
+    final idx = _missionWps.indexWhere((e) => e.id == id);
+    if (idx < 0 || !_showMissionGeometry) return;
+    final cam = _mapController.camera;
+    final p = _missionWps[idx].point;
+    final screen = cam.latLngToScreenPoint(p);
+    final nextScreen = math.Point(screen.x + details.delta.dx, screen.y + details.delta.dy);
+    final next = cam.pointToLatLng(nextScreen);
+    setState(() {
+      _missionWps[idx] = _missionWps[idx].copyWith(point: next);
+      _renumberWaypoints();
+      _selectedWaypointId = id;
+    });
+  }
 
-  List<LatLng> get _missionPathPoints => _missionWps.map((w) => w.point).toList();
+  void _nudgeSelectedWaypoint(double northM, double eastM) {
+    final id = _selectedWaypointId;
+    if (id == null || !_showMissionGeometry) return;
+    final idx = _missionWps.indexWhere((e) => e.id == id);
+    if (idx < 0) return;
+    final p = _missionWps[idx].point;
+    final latRad = p.latitude * math.pi / 180.0;
+    final dLat = northM / 111320.0;
+    final dLon = eastM / (111320.0 * math.cos(latRad));
+    final np = LatLng(p.latitude + dLat, p.longitude + dLon);
+    setState(() {
+      _missionWps[idx] = _missionWps[idx].copyWith(point: np);
+      _renumberWaypoints();
+    });
+  }
+
+  List<MapWaypoint> get _mapWaypoints => [
+        for (var i = 0; i < _missionWps.length; i++)
+          MapWaypoint(
+            id: _missionWps[i].id,
+            label: _missionWps[i].markerLabel(_missionWps, i),
+            point: _missionWps[i].point,
+            isViolation: false,
+            selected: _missionWps[i].id == _selectedWaypointId,
+            onPanUpdate: _showMissionGeometry
+                ? (details) => _onWaypointPanUpdate(_missionWps[i].id, details)
+                : null,
+          ),
+      ];
+
+  /// Fly path: only [AgriWaypointKind.routeFlight] points, in mission list order.
+  List<LatLng> get _routePathPoints =>
+      [for (final w in _missionWps) if (w.kind == AgriWaypointKind.routeFlight) w.point];
 
   List<String> _buildLogLines() {
     final h = DateTime.now();
@@ -569,6 +662,23 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onMapTap(TapPosition tap, LatLng point) {
+    final rid = _relocationTargetId;
+    if (rid != null) {
+      final idx = _missionWps.indexWhere((e) => e.id == rid);
+      if (idx >= 0) {
+        setState(() {
+          _missionWps[idx] = _missionWps[idx].copyWith(point: point);
+          _renumberWaypoints();
+          _relocationTargetId = null;
+          _selectedWaypointId = rid;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Waypoint moved to tapped location.')),
+        );
+        return;
+      }
+      setState(() => _relocationTargetId = null);
+    }
     setState(() => _selectedWaypointId = null);
   }
 
@@ -578,20 +688,203 @@ class _MapScreenState extends State<MapScreen> {
         id: 'wp-${DateTime.now().microsecondsSinceEpoch}',
         index: 0,
         point: point,
+        kind: _placementKind,
       );
       _missionWps.add(w);
       _renumberWaypoints();
       _selectedWaypointId = w.id;
     });
-    if (isInDemoNfz(point)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Added waypoint inside demo NFZ — mission is blocked until moved.')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Added ${_missionWps.last.label}')),
-      );
-    }
+    final i = _missionWps.length - 1;
+    final added = _missionWps[i];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Added ${added.markerLabel(_missionWps, i)} — ${added.kind.title()}. '
+          'Long-press again or tap + to change type.',
+        ),
+      ),
+    );
+  }
+
+  void _showPlacementKindSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Next map point',
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Boundary points connect in order to outline your land (three or more fill the plot). '
+                'Route points are an optional separate fly line.',
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SegmentedButton<AgriWaypointKind>(
+                segments: [
+                  ButtonSegment<AgriWaypointKind>(
+                    value: AgriWaypointKind.routeFlight,
+                    label: Text(AgriWaypointKind.routeFlight.title()),
+                    icon: const Icon(Icons.timeline, size: 18),
+                  ),
+                  ButtonSegment<AgriWaypointKind>(
+                    value: AgriWaypointKind.fieldBoundary,
+                    label: Text(AgriWaypointKind.fieldBoundary.title()),
+                    icon: const Icon(Icons.format_shapes_outlined, size: 18),
+                  ),
+                ],
+                selected: {_placementKind},
+                onSelectionChanged: (s) => setState(() => _placementKind = s.first),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Long-press the map to place.',
+                style: Theme.of(ctx).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMissionWaypointsRoster() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        minChildSize: 0.28,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollCtrl) {
+          if (_missionWps.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Text(
+                  'No mission points yet. Long-press the map or use +.',
+                  style: Theme.of(ctx).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+                child: Text(
+                  'Mission points',
+                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollCtrl,
+                  itemCount: _missionWps.length,
+                  itemBuilder: (ctx, i) {
+                    final w = _missionWps[i];
+                    final label = w.markerLabel(_missionWps, i);
+                    return ListTile(
+                      leading: Icon(
+                        w.kind == AgriWaypointKind.fieldBoundary
+                            ? Icons.format_shapes_outlined
+                            : Icons.timeline,
+                      ),
+                      title: Text(label),
+                      subtitle: Text(
+                        '${w.kind.title()} • '
+                        '${w.point.latitude.toStringAsFixed(5)}, ${w.point.longitude.toStringAsFixed(5)}',
+                      ),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _openWaypointProperties(i);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _openWaypointProperties(int index) {
+    if (index < 0 || index >= _missionWps.length) return;
+    final wp = _missionWps[index];
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (c2) => FractionallySizedBox(
+        heightFactor: 0.78,
+        child: WaypointPropertySheet(
+          waypointTitle: '${wp.markerLabel(_missionWps, index)} — ${wp.kind.title()}',
+          initial: MissionWaypointEditorValues(
+            latitude: wp.point.latitude,
+            longitude: wp.point.longitude,
+            altitudeM: wp.altMeters,
+            speedMps: wp.speedMps,
+            holdSeconds: wp.holdSeconds,
+            action: wp.action,
+            kind: wp.kind,
+          ),
+          showKindPicker: true,
+          onPickLocationOnMap: () {
+            setState(() => _relocationTargetId = wp.id);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Tap the map to move this point.')),
+            );
+          },
+          onApply: (v) {
+            setState(() {
+              _missionWps[index] = _missionWps[index].copyWith(
+                point: LatLng(v.latitude, v.longitude),
+                kind: v.kind,
+                altMeters: v.altitudeM,
+                speedMps: v.speedMps,
+                holdSeconds: v.holdSeconds,
+                action: v.action,
+              );
+              _renumberWaypoints();
+            });
+          },
+          onClose: () => Navigator.of(c2).pop(),
+          onDelete: () {
+            setState(() {
+              _missionWps.removeAt(index);
+              _renumberWaypoints();
+              if (_selectedWaypointId == wp.id) _selectedWaypointId = null;
+            });
+          },
+        ),
+      ),
+    );
   }
 
   void _onWaypointTap(String id, LatLng point) {
@@ -611,7 +904,7 @@ class _MapScreenState extends State<MapScreen> {
           shrinkWrap: true,
           children: [
             ListTile(
-              title: Text('${wp.label} ${wp.isNfzViolation ? "(NFZ)" : ""}'),
+              title: Text(wp.markerLabel(_missionWps, idx)),
               subtitle: Text(
                 '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
               ),
@@ -640,21 +933,10 @@ class _MapScreenState extends State<MapScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.info_outline),
-              title: const Text('Properties (wireframe)'),
+              title: const Text('Properties'),
               onTap: () {
                 Navigator.of(ctx).pop();
-                showModalBottomSheet<void>(
-                  context: context,
-                  showDragHandle: true,
-                  isScrollControlled: true,
-                  builder: (c2) => FractionallySizedBox(
-                    heightFactor: 0.6,
-                    child: WaypointPropertySheet(
-                      waypointTitle: 'Waypoint ${wp.index} (placeholder)',
-                      onClose: () => Navigator.of(c2).pop(),
-                    ),
-                  ),
-                );
+                _openWaypointProperties(idx);
               },
             ),
           ],
@@ -682,27 +964,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _attemptStartMission() async {
-    // SRS §7.5 / FR-25-05: mission start is blocked if any waypoint is in NFZ.
-    if (_hasAirspaceViolation) {
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Airspace Violation'),
-          content: const Text(
-            'This mission contains waypoints inside a No-Fly Zone (NFZ). '
-            'Move or edit the violating waypoint(s) before starting.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
     // SRS FR-27-05: disable mission start when pre-arm checks fail.
     if (!_preArmAllPass) {
       await showModalBottomSheet<void>(
@@ -739,8 +1000,6 @@ class _MapScreenState extends State<MapScreen> {
       builder: (ctx) => MapLayersSheet(
         useSatelliteBasemap: _satelliteBasemap,
         onUseSatelliteBasemapChanged: (v) => setState(() => _satelliteBasemap = v),
-        airspaceOverlayEnabled: _airspaceLayer,
-        onAirspaceOverlayChanged: (v) => setState(() => _airspaceLayer = v),
         missionGeometryEnabled: _showMissionGeometry,
         onMissionGeometryChanged: (v) => setState(() => _showMissionGeometry = v),
         vehicleOnMapEnabled: _showVehicleOnMap,
@@ -764,23 +1023,12 @@ class _MapScreenState extends State<MapScreen> {
         heightFactor: 0.5,
         child: _MissionSummarySheet(
           waypointCount: _waypointCount,
-          hasAirspaceViolation: _hasAirspaceViolation,
+          plotBoundaryCount: _plotBoundaryCount,
           preArmAllPass: _preArmAllPass,
           canStartMission: _canStartMission,
           onOpenWaypointEditor: () {
             Navigator.of(ctx).pop();
-            showModalBottomSheet<void>(
-              context: context,
-              showDragHandle: true,
-              isScrollControlled: true,
-              builder: (ctx2) => FractionallySizedBox(
-                heightFactor: 0.6,
-                child: WaypointPropertySheet(
-                  waypointTitle: 'Waypoint Properties (placeholder)',
-                  onClose: () => Navigator.of(ctx2).pop(),
-                ),
-              ),
-            );
+            _showMissionWaypointsRoster();
           },
           onLoadMission: () {
             Navigator.of(ctx).pop();
@@ -823,6 +1071,7 @@ class _MapScreenState extends State<MapScreen> {
     final extraPolylines = <Polyline>[];
     final extraCircles = <CircleMarker>[];
     final extraMarkers = <Marker>[];
+    final landPolys = <Polygon>[];
 
     if (_showPhoneLocation && _phoneTrail.length >= 2) {
       extraPolylines.add(
@@ -907,6 +1156,31 @@ class _MapScreenState extends State<MapScreen> {
       );
     }
 
+    if (_showMissionGeometry) {
+      final bv = <LatLng>[
+        for (final w in _missionWps)
+          if (w.kind == AgriWaypointKind.fieldBoundary) w.point,
+      ];
+      if (bv.length >= 3) {
+        landPolys.add(
+          Polygon(
+            points: bv,
+            color: scheme.primary.withValues(alpha: 0.22),
+            borderColor: scheme.primary.withValues(alpha: 0.92),
+            borderStrokeWidth: 2.5,
+          ),
+        );
+      } else if (bv.length == 2) {
+        extraPolylines.add(
+          Polyline(
+            points: bv,
+            strokeWidth: 3,
+            color: scheme.primary.withValues(alpha: 0.82),
+          ),
+        );
+      }
+    }
+
     extraMarkers.add(
       Marker(
         point: _homePoint,
@@ -924,16 +1198,18 @@ class _MapScreenState extends State<MapScreen> {
           child: RepaintBoundary(
             child: MapViewport(
               controller: _mapController,
+              initialCenter: _mapAnchor,
+              initialZoom: _mapInitialZoom,
               tileUrlTemplate: _satelliteBasemap
                   ? MapTileTemplates.esriWorldImagery
                   : MapTileTemplates.cartoDark,
               enhanceTiles: !kIsWeb,
-              showAirspaceOverlay: _airspaceLayer,
+              landPolygons: landPolys,
               extraPolylines: extraPolylines,
               extraCircles: extraCircles,
               extraMarkers: extraMarkers,
               waypoints: _showMissionGeometry ? _mapWaypoints : const [],
-              path: _showMissionGeometry ? _missionPathPoints : const [],
+              path: _showMissionGeometry ? _routePathPoints : const [],
               onMapTap: _onMapTap,
               onMapLongPress: _onMapLongPress,
               onWaypointTap: _onWaypointTap,
@@ -941,6 +1217,59 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
         ),
+        if (_bootstrapStatus != null || _relocationTargetId != null)
+          Positioned(
+            top: 72,
+            left: widget.overlayInsets.left + 8,
+            right: widget.overlayInsets.right + 8,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_bootstrapStatus != null)
+                  Material(
+                    color: scheme.secondaryContainer.withValues(alpha: 0.96),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      child: Text(
+                        _bootstrapStatus!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSecondaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ),
+                if (_bootstrapStatus != null && _relocationTargetId != null) const SizedBox(height: 6),
+                if (_relocationTargetId != null)
+                  Material(
+                    color: scheme.primaryContainer.withValues(alpha: 0.96),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Tap the map to move the selected waypoint.',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: scheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => setState(() => _relocationTargetId = null),
+                            child: const Text('Cancel'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         // Global alert banner (critical/persistent), inset away from side overlays.
         if (widget.statusModel?.bannerAlert != null)
           Positioned(
@@ -991,6 +1320,20 @@ class _MapScreenState extends State<MapScreen> {
               homeDistanceM: _geoDistance(_homePoint, vehiclePoint),
               homeBearingDeg: _bearingBetween(vehiclePoint, _homePoint),
               compact: MediaQuery.sizeOf(context).width < 980,
+            ),
+          ),
+        if (_selectedWaypointId != null &&
+            _showMissionGeometry &&
+            _relocationTargetId == null)
+          Positioned(
+            left: (widget.mapQuickActionLeft ?? AppSpacing.lg) + 56,
+            bottom: MediaQuery.paddingOf(context).bottom + (_dockOpen ? 200.0 : 72.0) + 8,
+            child: WaypointNudgePad(
+              stepFineM: 0.5,
+              stepCoarseM: 5,
+              coarse: _nudgeCoarse,
+              onToggleCoarse: () => setState(() => _nudgeCoarse = !_nudgeCoarse),
+              onNudge: _nudgeSelectedWaypoint,
             ),
           ),
         Positioned(
@@ -1142,20 +1485,7 @@ class _MapScreenState extends State<MapScreen> {
                   onMissionSummary: _showMissionSummarySheet,
                   onToggleTracking: _toggleTracking,
                   tracking: _tracking,
-                  onWaypoints: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      showDragHandle: true,
-                      isScrollControlled: true,
-                      builder: (ctx) => FractionallySizedBox(
-                        heightFactor: 0.6,
-                        child: WaypointPropertySheet(
-                          waypointTitle: 'Waypoint Properties (placeholder)',
-                          onClose: () => Navigator.of(ctx).pop(),
-                        ),
-                      ),
-                    );
-                  },
+                  onWaypoints: _showMissionWaypointsRoster,
                 ),
                 expanded: GcsBottomDock(
                   logLines: _buildLogLines(),
@@ -1175,20 +1505,7 @@ class _MapScreenState extends State<MapScreen> {
                     onMissionSummary: _showMissionSummarySheet,
                     onToggleTracking: _toggleTracking,
                     tracking: _tracking,
-                    onWaypoints: () {
-                      showModalBottomSheet<void>(
-                        context: context,
-                        showDragHandle: true,
-                        isScrollControlled: true,
-                        builder: (ctx) => FractionallySizedBox(
-                          heightFactor: 0.6,
-                          child: WaypointPropertySheet(
-                            waypointTitle: 'Waypoint Properties (placeholder)',
-                            onClose: () => Navigator.of(ctx).pop(),
-                          ),
-                        ),
-                      );
-                    },
+                    onWaypoints: _showMissionWaypointsRoster,
                   ),
                 ),
               ),
@@ -2196,7 +2513,7 @@ class _FabMenuSheet extends StatelessWidget {
 class _MissionSummarySheet extends StatelessWidget {
   const _MissionSummarySheet({
     required this.waypointCount,
-    required this.hasAirspaceViolation,
+    required this.plotBoundaryCount,
     required this.preArmAllPass,
     required this.canStartMission,
     required this.onOpenWaypointEditor,
@@ -2205,7 +2522,7 @@ class _MissionSummarySheet extends StatelessWidget {
   });
 
   final int waypointCount;
-  final bool hasAirspaceViolation;
+  final int plotBoundaryCount;
   final bool preArmAllPass;
   final bool canStartMission;
   final VoidCallback onOpenWaypointEditor;
@@ -2250,8 +2567,10 @@ class _MissionSummarySheet extends StatelessWidget {
                         color: preArmAllPass ? scheme.tertiary : scheme.outline,
                       ),
                       StatusPill(
-                        label: hasAirspaceViolation ? 'Airspace: VIOLATION' : 'Airspace: CLEAR',
-                        color: hasAirspaceViolation ? scheme.error : scheme.tertiary,
+                        label: plotBoundaryCount >= 3
+                            ? 'Land plot: closed ($plotBoundaryCount corners)'
+                            : 'Land plot: $plotBoundaryCount corners (need 3 to fill)',
+                        color: plotBoundaryCount >= 3 ? scheme.tertiary : scheme.outline,
                       ),
                       StatusPill(
                         label: canStartMission ? 'Ready' : 'Blocked',
@@ -2403,25 +2722,53 @@ class _MissionWp {
     required this.id,
     required this.index,
     required this.point,
+    this.kind = AgriWaypointKind.routeFlight,
+    this.altMeters,
+    this.speedMps,
+    this.action = 'Navigate',
+    this.holdSeconds = 0,
   });
 
   final String id;
   final int index;
   final LatLng point;
+  final AgriWaypointKind kind;
+  final double? altMeters;
+  final double? speedMps;
+  final String action;
+  final double holdSeconds;
 
-  bool get isNfzViolation => isInDemoNfz(point);
+  bool get isNfzViolation => false;
 
-  String get label => 'WP$index';
+  /// Per-kind ordinal within [all] (e.g. W1, W2, B1), like K++ route vs boundary numbering.
+  String markerLabel(List<_MissionWp> all, int myIndex) {
+    var c = 0;
+    final end = myIndex < all.length ? myIndex : all.length - 1;
+    for (var j = 0; j <= end; j++) {
+      if (all[j].kind == kind) c++;
+    }
+    return '${kind.markerPrefix()}$c';
+  }
 
   _MissionWp copyWith({
     String? id,
     int? index,
     LatLng? point,
+    AgriWaypointKind? kind,
+    double? altMeters,
+    double? speedMps,
+    String? action,
+    double? holdSeconds,
   }) {
     return _MissionWp(
       id: id ?? this.id,
       index: index ?? this.index,
       point: point ?? this.point,
+      kind: kind ?? this.kind,
+      altMeters: altMeters ?? this.altMeters,
+      speedMps: speedMps ?? this.speedMps,
+      action: action ?? this.action,
+      holdSeconds: holdSeconds ?? this.holdSeconds,
     );
   }
 }

@@ -1,0 +1,280 @@
+' Fuselage Mission Planner — design model (repository only)
+' Open with PlantUML / VS Code PlantUML extension
+
+@startuml Fuselage_Design_Package_Model
+title Package & dependency model (Flutter app + backend)
+
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "Flutter client (lib/)" {
+  package "entry" {
+    [main.dart] as Main
+  }
+  package "core" {
+    [app / MissionPlannerApp] as App
+    [routing / AppRouter + AppRoutes] as Route
+    [auth / AuthSession] as Sess
+    [theme / ThemeController + ThemeScope + AppTheme] as Theme
+    [settings / AppSettingsController + SettingsScope] as Sett
+    [gcs / GcsStatusModel + enums] as GcsModel
+    [ui / app_spacing, etc.] as Ui
+  }
+  package "features" {
+    package "auth" {
+      [data / AuthApi] as AuthApi
+      [presentation / LoginScreen, RegisterScreen,\nAdminRegistrationRequestsScreen] as AuthUi
+    }
+    package "mission" {
+      [domain / Mission, MissionRepository,\nMissionPriority, MissionStatus] as MisDom
+      [data / DummyMissionRepository] as MisData
+      [presentation / screens + widgets] as MisUi
+    }
+    package "tasks" {
+      [domain / TasksRepository, Agent, MissionTask] as TaskDom
+      [data / DummyTasksRepository] as TaskData
+      [presentation / TasksScreen] as TaskUi
+    }
+    package "map" {
+      [presentation / MapScreen] as MapUi
+      [logic / SimulatedTelemetry] as SimTel
+      [logic / airspace_map, etc.] as MapLog
+    }
+    ' ... other feature packages: airspace, camera, dashboard, firmware, flight_modes,\n'   fsm, help, manual_control, plugins, power, replay, settings, shell, splash, telemetry, vehicles, vehicle_setup
+  }
+  package "screens (GCS shell pages)" {
+    [GcsShell] as Shell
+    [MissionPage, LogsPage, SettingsPage] as ShellPages
+  }
+  package "widgets" {
+    [gcs_*, map helpers] as Wdg
+  }
+  package "shared/widgets" {
+    [AppDrawer, glass, gcs, buttons, ...] as Shared
+  }
+}
+
+package "External (packages)" {
+  [flutter / material.dart] as FlMat
+  [package:http] as Http
+  [package:shared_preferences] as Prefs
+  [package:flutter_map + latlong2] as FMap
+  [package:geolocator] as Geo
+  [package:camera] as Cam
+  [package:google_fonts] as GF
+}
+
+package "backend (Node)" {
+  [server.js — Express app] as Srv
+  [auth.js — Router] as AuthR
+  [db.js — pg Pool + query] as DbMod
+  [migrate.js — schema guards] as Mig
+}
+
+database "PostgreSQL" as PG
+
+Main --> App
+App --> Route
+App --> Theme
+App --> Sett
+Route ..> Shell : creates
+Route ..> AuthUi : creates
+Route ..> MisUi : creates
+' (AppRouter creates all registered route screens)
+
+Shell --> MapUi
+MapUi --> GcsModel : updates
+MapUi --> SimTel
+AuthUi --> AuthApi
+AuthUi --> Sess
+AuthApi --> Http
+Theme --> Prefs
+Sett --> Prefs
+MapUi --> FMap
+MapUi --> Geo
+
+MisData ..|> MisDom
+TaskData ..|> TaskDom
+
+Srv --> AuthR
+Srv --> Mig
+AuthR --> DbMod
+Mig --> DbMod
+DbMod --> PG
+
+note right of features
+  **feature packages in repo** (each has presentation/; some have domain/, data/):
+  airspace, auth, camera, dashboard, firmware, flight_modes,
+  fsm, help, manual_control, map, mission, plugins, power,
+  replay, settings, shell, splash, tasks, telemetry, vehicles,
+  vehicle_setup
+end note
+
+@enduml
+
+
+@startuml Fuselage_Design_Class_Model
+title Structural class model (types in repository — selected)
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+' --- Core ---
+
+class MissionPlannerApp <<StatefulWidget>> {
+}
+class _MissionPlannerAppState <<State>> {
+}
+
+abstract class AppRouter <<utility>> {
+  {static} +onGenerateRoute()
+}
+
+abstract class AppRoutes <<utility>> {
+}
+
+class AuthSession <<singleton>> {
+  -token : String?
+  -user : Map?
+  +isLoggedIn : bool
+  +isAdmin : bool
+  +setSession()
+  +clear()
+}
+
+class ThemeController <<ChangeNotifier>> {
+}
+class ThemeScope <<InheritedNotifier>>
+
+class AppSettingsController <<ChangeNotifier>> {
+}
+class SettingsScope <<InheritedNotifier>>
+
+class AppTheme <<utility>> {
+  {static} light()
+  {static} dark()
+}
+
+enum AlertSeverity
+enum VehicleSystemState
+enum LinkType
+class GcsAlert
+class GcsStatusModel <<ChangeNotifier>>
+
+
+' --- Auth API ---
+
+class AuthApi {
+  -_baseUrl : String
+  +login()
+  +register()
+  +listPendingRegistrations()
+  +approveRegistration()
+  +rejectRegistration()
+  {_static} _decode()
+}
+
+
+' --- Mission domain ---
+
+enum MissionPriority
+enum MissionStatus
+class Mission {
+  +id : String
+  +name : String
+  ...
+}
+
+abstract class MissionRepository <<interface>> {
+  +listMissions()
+  +getMissionById()
+}
+
+class DummyMissionRepository {
+}
+
+class WaypointVm {
+  +copyWith()
+}
+
+
+' --- Tasks domain ---
+
+abstract class TasksRepository <<interface>> {
+}
+
+class DummyTasksRepository {
+}
+class Agent
+class MissionTask
+
+
+' --- Map logic ---
+
+class SimulatedTelemetry {
+  +step()
+}
+
+
+' --- Backend (CommonJS modules as classes) ---
+
+class "express app" as ExpressApp <<Node>>
+class "auth router" as AuthRouter <<Express.Router>>
+class "db module" as DbModule <<Node>> {
+  +query()
+}
+class "migrate module" as MigModule <<Node>> {
+  +ensureUserRegistrationSchema()
+  +ensureMissionsTable()
+}
+
+MissionPlannerApp *-- _MissionPlannerAppState
+_MissionPlannerAppState ..> AppRouter : uses
+_MissionPlannerAppState ..> ThemeController
+_MissionPlannerAppState ..> AppSettingsController
+_MissionPlannerAppState ..> ThemeScope
+_MissionPlannerAppState ..> SettingsScope
+_MissionPlannerAppState ..> AppTheme
+
+GcsStatusModel *-- "0..*" GcsAlert
+GcsStatusModel ..> AlertSeverity
+GcsStatusModel ..> VehicleSystemState
+GcsStatusModel ..> LinkType
+
+DummyMissionRepository ..|> MissionRepository
+DummyMissionRepository ..> Mission
+Mission ..> MissionPriority
+Mission ..> MissionStatus
+
+DummyTasksRepository ..|> TasksRepository
+DummyTasksRepository ..> Agent
+DummyTasksRepository ..> MissionTask
+
+SimulatedTelemetry ..> "latlong2" : LatLng
+
+AuthApi ..> "http.Client" : uses
+
+ExpressApp *-- AuthRouter
+ExpressApp ..> MigModule : start()
+AuthRouter ..> DbModule
+MigModule ..> DbModule
+
+note bottom of MissionPlannerApp
+  **Presentation:** Screen widgets include
+  SplashScreen, LoginScreen, RegisterScreen,
+  GcsShell, MapScreen, MissionPage, LogsPage,
+  SettingsPage, AdminRegistrationRequestsScreen,
+  MissionWizardScreen, MissionEditorScreen,
+  MissionDetailsScreen, + feature screens in
+  `lib/features/*/presentation/screens/`
+  (all registered in AppRouter).
+end note
+
+note bottom of ExpressApp
+  **server.js** mounts `express.json`, `cors`,
+  `GET /health`, `app.use("/auth", authRoutes)`.
+  **auth.js** implements register, login,
+  admin pending list / approve / reject.
+end note
+
+@enduml

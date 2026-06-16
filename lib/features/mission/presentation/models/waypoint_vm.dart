@@ -1,3 +1,5 @@
+import '../../domain/agri_waypoint_kind.dart';
+
 class WaypointVm {
   const WaypointVm({
     required this.id,
@@ -7,6 +9,8 @@ class WaypointVm {
     required this.altMeters,
     required this.speedMps,
     required this.action,
+    this.kind = AgriWaypointKind.routeFlight,
+    this.holdSeconds = 0,
   });
 
   final String id;
@@ -16,6 +20,8 @@ class WaypointVm {
   final double? altMeters;
   final double? speedMps;
   final String action;
+  final AgriWaypointKind kind;
+  final double holdSeconds;
 
   WaypointVm copyWith({
     String? label,
@@ -24,6 +30,8 @@ class WaypointVm {
     double? altMeters,
     double? speedMps,
     String? action,
+    AgriWaypointKind? kind,
+    double? holdSeconds,
   }) {
     return WaypointVm(
       id: id,
@@ -33,6 +41,8 @@ class WaypointVm {
       altMeters: altMeters ?? this.altMeters,
       speedMps: speedMps ?? this.speedMps,
       action: action ?? this.action,
+      kind: kind ?? this.kind,
+      holdSeconds: holdSeconds ?? this.holdSeconds,
     );
   }
 }

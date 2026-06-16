@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/auth/auth_session.dart';
+import '../core/routing/app_router.dart';
 import '../core/settings/app_settings_controller.dart';
 import '../core/theme/theme_controller.dart';
 
@@ -47,7 +49,8 @@ class SettingsPage extends StatelessWidget {
             Divider(height: 1, color: scheme.outlineVariant),
             _ToggleTile(
               title: 'Use phone GPS',
-              subtitle: 'When ON: use mobile location. When OFF: use vehicle/drone GPS.',
+              subtitle:
+                  'When ON: show your position trail on the map. The map also requests a one-time fix on open to center on you (allow location in the browser/OS).',
               value: settings.usePhoneGps,
               onChanged: (v) => settings.setUsePhoneGps(v),
             ),
@@ -70,6 +73,18 @@ class SettingsPage extends StatelessWidget {
               ),
               leading: Icon(Icons.link, color: scheme.onSurfaceVariant),
             ),
+            if (AuthSession.instance.isAdmin) ...[
+              Divider(height: 1, color: scheme.outlineVariant),
+              ListTile(
+                title: Text('Registration requests', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700)),
+                subtitle: Text(
+                  'Review and approve pilot signups',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+                leading: Icon(Icons.how_to_reg_rounded, color: scheme.primary),
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.adminRegistrationRequests),
+              ),
+            ],
           ],
         ),
       ),

@@ -8,8 +8,6 @@ class MapLayersSheet extends StatelessWidget {
     super.key,
     required this.useSatelliteBasemap,
     required this.onUseSatelliteBasemapChanged,
-    required this.airspaceOverlayEnabled,
-    required this.onAirspaceOverlayChanged,
     required this.missionGeometryEnabled,
     required this.onMissionGeometryChanged,
     required this.vehicleOnMapEnabled,
@@ -24,8 +22,6 @@ class MapLayersSheet extends StatelessWidget {
 
   final bool useSatelliteBasemap;
   final ValueChanged<bool> onUseSatelliteBasemapChanged;
-  final bool airspaceOverlayEnabled;
-  final ValueChanged<bool> onAirspaceOverlayChanged;
   final bool missionGeometryEnabled;
   final ValueChanged<bool> onMissionGeometryChanged;
   final bool vehicleOnMapEnabled;
@@ -90,19 +86,11 @@ class MapLayersSheet extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                value: airspaceOverlayEnabled,
-                onChanged: onAirspaceOverlayChanged,
-                secondary: Icon(Icons.public_outlined, color: scheme.primary),
-                title: const Text('Airspace & NFZ'),
-                subtitle: const Text('Show demo NFZ shading (wireframe polygon)'),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
                 value: missionGeometryEnabled,
                 onChanged: onMissionGeometryChanged,
                 secondary: Icon(Icons.timeline_outlined, color: scheme.primary),
-                title: const Text('Mission route & waypoints'),
-                subtitle: const Text('Path polyline and waypoint markers'),
+                title: const Text('Land plot & waypoints'),
+                subtitle: const Text('Field polygon, route path, and vertex markers'),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

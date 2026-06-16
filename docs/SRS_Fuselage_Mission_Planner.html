@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SRS — Fuselage Mission Planner</title>
+  <style>
+    @page { size: A4; margin: 18mm; }
+    html { font-size: 11pt; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      line-height: 1.45;
+      color: #111;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 12px 16px 24px;
+    }
+    h1 { font-size: 1.35rem; border-bottom: 2px solid #333; padding-bottom: 6px; }
+    h2 { font-size: 1.15rem; margin-top: 1.4em; page-break-after: avoid; }
+    h3 { font-size: 1.05rem; margin-top: 1.1em; page-break-after: avoid; }
+    table { border-collapse: collapse; width: 100%; margin: 0.6em 0 1em; font-size: 0.92rem; page-break-inside: avoid; }
+    th, td { border: 1px solid #999; padding: 6px 8px; vertical-align: top; text-align: left; }
+    th { background: #f0f0f0; }
+    hr { border: none; border-top: 1px solid #ccc; margin: 1.2em 0; }
+    code { font-family: Consolas, "Courier New", monospace; font-size: 0.9em; background: #f5f5f5; padding: 0 4px; }
+    @media print {
+      body { padding: 0; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+<article>
+<h1>Software Requirements Specification</h1>
+<h2>Fuselage Mission Planner</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Product name</strong></td>
+<td>Fuselage (Mission Planner wireframe)</td>
+</tr>
+<tr>
+<td><strong>Repository</strong></td>
+<td><code>mission_planner_wireframe</code> (Flutter) + <code>backend</code> (Node.js)</td>
+</tr>
+<tr>
+<td><strong>Document version</strong></td>
+<td>1.0</td>
+</tr>
+<tr>
+<td><strong>SDK / runtime</strong></td>
+<td>Dart <code>&gt;=3.4.0 &lt;4.0.0</code>, Node.js (Express 5), PostgreSQL</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td>Requirements as implemented or explicitly present in source, SQL, and configuration files in this repository only.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>1. Introduction</h2>
+<h3>1.1 Purpose</h3>
+<p>This Software Requirements Specification (SRS) describes the <strong>Fuselage</strong> ground-control and mission-planning client application and its <strong>companion authentication service</strong>. It is intended for developers, testers, and stakeholders who need a single reference for <strong>what the system currently contains</strong>, distinguishing <strong>implemented behavior</strong> from <strong>placeholder / wireframe</strong> UI.</p>
+<h3>1.2 Definitions</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>GCS</strong></td>
+<td>Ground Control Station (in-app shell around map, mission, logs, settings).</td>
+</tr>
+<tr>
+<td><strong>Wireframe</strong></td>
+<td>UI and navigation present; data may be simulated, dummy repositories, or static copy.</td>
+</tr>
+<tr>
+<td><strong>Pilot</strong></td>
+<td>User account with <code>role = pilot</code> in the database.</td>
+</tr>
+<tr>
+<td><strong>Administrator</strong></td>
+<td>User account with <code>role = admin</code> in the database.</td>
+</tr>
+<tr>
+<td><strong>JWT</strong></td>
+<td>JSON Web Token returned by <code>POST /auth/login</code> and stored in <code>AuthSession</code> on the client.</td>
+</tr>
+</tbody>
+</table>
+<h3>1.3 References (in-repository)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Document / location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td><code>README.md</code> (project root)</td>
+</tr>
+<tr>
+<td>R2</td>
+<td><code>backend/README.md</code></td>
+</tr>
+<tr>
+<td>R3</td>
+<td><code>docs/FLIGHT_FEATURES_CHECKLIST.md</code></td>
+</tr>
+<tr>
+<td>R4</td>
+<td><code>pubspec.yaml</code></td>
+</tr>
+<tr>
+<td>R5</td>
+<td><code>backend/package.json</code>, <code>backend/sql/init.sql</code>, <code>backend/src/*.js</code></td>
+</tr>
+<tr>
+<td>R6</td>
+<td><code>lib/core/routing/app_router.dart</code>, <code>lib/core/app/app.dart</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>2. Overall Description</h2>
+<h3>2.1 Product perspective</h3>
+<p>The system consists of:</p>
+<ol>
+<li><strong>Flutter application</strong> (<code>lib/</code>) — cross-platform client branded <strong>Fuselage</strong>; default entry is splash, then pilot sign-in, then primary <strong>GCS shell</strong> (<code>GcsShell</code>) with map-centric layout, sidebar sections, tools sheet, and optional push routes to additional screens.</li>
+<li><strong>HTTP authentication API</strong> (<code>backend/</code>) — Express application on configurable <code>PORT</code> (default <strong>4000</strong>), backed by <strong>PostgreSQL</strong>, exposing registration, login, admin registration review, and a database health probe.</li>
+</ol>
+<p>There is <strong>no</strong> implemented REST API in this repository for <strong>mission CRUD</strong> against the <code>missions</code> table; the table and indexes exist in SQL and migration scripts for future use.</p>
+<h3>2.2 User classes</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Guest</strong></td>
+<td>User before successful login; may use splash, sign-in, and registration screens.</td>
+</tr>
+<tr>
+<td><strong>Pilot</strong></td>
+<td>Authenticated user with approved registration (or admin logging in); uses GCS shell and routed feature screens.</td>
+</tr>
+<tr>
+<td><strong>Administrator</strong></td>
+<td>Authenticated user with <code>role === admin</code>; may access admin registration review UI and corresponding API endpoints.</td>
+</tr>
+<tr>
+<td><strong>System operator</strong></td>
+<td>Human or tool invoking <code>GET /health</code> (not called from Dart in this repo).</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 Operating constraints</h3>
+<ul>
+<li>Flutter <strong>Material</strong> themes (light/dark) via <code>MissionPlannerApp</code> and <code>ThemeController</code>.</li>
+<li>Auth API base URL from <code>AuthApi</code>: compile-time <code>String.fromEnvironment('AUTH_API_URL', defaultValue: 'http://localhost:4000')</code>.</li>
+<li>Backend requires <code>JWT_SECRET</code> (or dev default in code), PostgreSQL connection per <code>backend/.env.example</code>, CORS from <code>CORS_ORIGIN</code> or <code>*</code>.</li>
+</ul>
+<hr>
+<h2>3. Functional Requirements</h2>
+<h3>3.1 Application bootstrap and navigation</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-APP-01</strong></td>
+<td>On launch, <code>MaterialApp</code> shall use <code>initialRoute</code> <strong><code>/splash</code></strong> (<code>AppRoutes.splash</code>).</td>
+</tr>
+<tr>
+<td><strong>FR-APP-02</strong></td>
+<td><code>SplashScreen</code> shall run a timed boot simulation and then navigate to <strong><code>/auth</code></strong> (login).</td>
+</tr>
+<tr>
+<td><strong>FR-APP-03</strong></td>
+<td><code>AppRouter.onGenerateRoute</code> shall resolve all route names defined in <code>AppRoutes</code> to the corresponding screen widgets (see Appendix A).</td>
+</tr>
+<tr>
+<td><strong>FR-APP-04</strong></td>
+<td>Unknown route names shall display <code>_UnknownRouteScreen</code> with the attempted route name.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.2 Pilot authentication (client)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-AUTH-01</strong></td>
+<td><code>LoginScreen</code> shall collect email and password, validate non-empty email (contains <code>@</code>) and password minimum length <strong>4</strong>, and submit via <code>AuthApi.login</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-AUTH-02</strong></td>
+<td>On successful login response containing <code>token</code> and <code>user</code>, the client shall call <code>AuthSession.instance.setSession</code> and navigate with <strong><code>pushReplacementNamed</code></strong> to <strong><code>/</code></strong> (<code>GcsShell</code>).</td>
+</tr>
+<tr>
+<td><strong>FR-AUTH-03</strong></td>
+<td>On failure, the client shall display decoded error text from the API response body.</td>
+</tr>
+<tr>
+<td><strong>FR-AUTH-04</strong></td>
+<td>From login, user shall navigate to <strong><code>/register</code></strong> via outlined button.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.3 Pilot registration (client + server)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-REG-01</strong></td>
+<td><code>RegisterScreen</code> shall collect name, email, <strong>pilot ID</strong> (required by form validators; minimum <strong>4</strong> characters), and password (minimum <strong>4</strong> characters).</td>
+</tr>
+<tr>
+<td><strong>FR-REG-02</strong></td>
+<td>On submit, the client shall call <code>AuthApi.register</code> with JSON body fields aligned with backend expectations.</td>
+</tr>
+<tr>
+<td><strong>FR-REG-03</strong></td>
+<td>Success shall display server <code>message</code> or a default approval-pending message.</td>
+</tr>
+<tr>
+<td><strong>FR-REG-04</strong></td>
+<td><code>POST /auth/register</code> shall create a <code>pilot</code> row with <code>registration_status = pending</code> unless validation fails, email conflicts, or rejected-email policy applies (see <code>backend/src/auth.js</code>).</td>
+</tr>
+<tr>
+<td><strong>FR-REG-05</strong></td>
+<td>Passwords shall be stored only as <strong>bcrypt</strong> hashes (cost factor <strong>10</strong> in implementation).</td>
+</tr>
+</tbody>
+</table>
+<h3>3.4 Session and role (client)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-SES-01</strong></td>
+<td><code>AuthSession</code> shall hold nullable <code>token</code> and <code>user</code> map.</td>
+</tr>
+<tr>
+<td><strong>FR-SES-02</strong></td>
+<td><code>isLoggedIn</code> shall be true when <code>token</code> is non-null and non-empty.</td>
+</tr>
+<tr>
+<td><strong>FR-SES-03</strong></td>
+<td><code>isAdmin</code> shall be true when <code>user['role']</code> (lowercased) equals <strong><code>admin</code></strong>.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.5 Administrator registration review (client + server)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-ADM-01</strong></td>
+<td>Route <strong><code>/admin/registration-requests</code></strong> shall render <code>AdminRegistrationRequestsScreen</code> when <code>AuthSession.instance.isAdmin</code> is true; otherwise <code>_AdminAccessDeniedScreen</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-ADM-02</strong></td>
+<td>On load and refresh, the admin screen shall call <code>GET /auth/admin/pending-registrations</code> with <code>Authorization: Bearer &lt;token&gt;</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-ADM-03</strong></td>
+<td>Approve shall <code>POST .../pending-registrations/:userId/approve</code>; reject shall confirm via dialog then <code>POST .../reject</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-ADM-04</strong></td>
+<td>After approve/reject, the UI shall reload the pending list and show snack bar feedback.</td>
+</tr>
+<tr>
+<td><strong>FR-ADM-05</strong></td>
+<td>Backend shall enforce JWT validation and <strong><code>requireAdmin</code></strong> on admin routes.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.6 GCS shell (primary post-login experience)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-GCS-01</strong></td>
+<td><code>GcsShell</code> shall keep <strong>map</strong> as the base layer when the map section is active; <code>MapScreen</code> receives <code>GcsStatusModel</code> for top bar and right telemetry panel updates.</td>
+</tr>
+<tr>
+<td><strong>FR-GCS-02</strong></td>
+<td>Sidebar shall switch sections: <strong>map</strong>, <strong>mission</strong> (<code>MissionPage</code>), <strong>logs</strong> (<code>LogsPage</code>), <strong>settings</strong> (<code>SettingsPage</code>).</td>
+</tr>
+<tr>
+<td><strong>FR-GCS-03</strong></td>
+<td><strong>Tools</strong> modal shall list navigation targets: registration requests (admin only), telemetry, camera, manual control, airspace, replay, plugins, vehicles, vehicle setup hub — each <code>pushNamed</code> to the corresponding <code>AppRoutes</code> value.</td>
+</tr>
+<tr>
+<td><strong>FR-GCS-04</strong></td>
+<td>Top bar shall expose tools, telemetry panel toggle, and close overlay when not on map section.</td>
+</tr>
+<tr>
+<td><strong>FR-GCS-05</strong></td>
+<td>Right <strong>telemetry</strong> strip shall show collapsible panel with fields bound to <code>GcsStatusModel</code> (altitude, speed, battery, GPS, EKF/IMU/compass status lines as implemented in <code>MapScreen</code> / model).</td>
+</tr>
+</tbody>
+</table>
+<h3>3.7 Mission page (client)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-MIS-01</strong></td>
+<td><code>MissionPage</code> shall provide <strong>Load</strong> and <strong>Save</strong> actions opening <code>showLoadMissionDialog</code> / <code>showSaveMissionDialog</code> (placeholder persistence messaging).</td>
+</tr>
+<tr>
+<td><strong>FR-MIS-02</strong></td>
+<td><strong>New mission</strong> shall navigate to <strong><code>/mission-wizard</code></strong>.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.8 Map workspace (client)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-MAP-01</strong></td>
+<td><code>MapScreen</code> shall render <code>flutter_map</code> with simulated vehicle motion, optional airspace layer, mission waypoint markers, map layers sheet, zoom rail, bottom dock, HUD, manual control panel entry, RTH feedback, mission progress widget, and emergency stop control as implemented in source.</td>
+</tr>
+<tr>
+<td><strong>FR-MAP-02</strong></td>
+<td>When <strong>Use phone GPS</strong> is enabled in app settings, the map shall use <code>geolocator</code> stream per implementation in <code>MapScreen</code> and <code>AppSettingsController</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-MAP-03</strong></td>
+<td>Map primary FAB flow shall include navigation to <strong>mission wizard</strong> for new mission.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.9 Settings (GCS tactical settings page)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-SET-01</strong></td>
+<td><code>SettingsPage</code> shall allow toggling <strong>force light mode</strong> via <code>ThemeController</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-SET-02</strong></td>
+<td>Shall allow toggling <strong>use phone GPS</strong> via <code>AppSettingsController</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-SET-03</strong></td>
+<td>Shall show a <strong>Connection</strong> list tile (simulated link copy).</td>
+</tr>
+<tr>
+<td><strong>FR-SET-04</strong></td>
+<td>If <code>isAdmin</code>, shall provide navigation to admin registration requests route.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.10 Routed feature screens (wireframe)</h3>
+<p>Each of the following shall be reachable via <code>Navigator.pushNamed</code> with the route name in Appendix A and shall present the UI implemented in its screen file (placeholder content unless otherwise noted):</p>
+<p>Mission wizard, mission editor, mission details; manual control; camera/payload; telemetry dashboard; power management; airspace; mission replay; plugin manager; multi-vehicle; FSM viewer; firmware flash; flight mode reference; alerts inbox; help/about; vehicle setup hub and seven subsection screens (sensors, radio, battery, navigation/arming/safety, agri payload, ops logging, mission map core).</p>
+<h3>3.11 Alternate shell (legacy / wide-layout wireframe)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-ALT-01</strong></td>
+<td><code>AppShell</code> with bottom tabs and <code>DashboardScreen</code>, <code>MissionsScreen</code>, <code>MapScreen</code>, <code>TasksScreen</code>, <code>SettingsScreen</code> remains in the codebase with drawer navigation to overlapping feature set; it is <strong>not</strong> the default route after login in <code>MissionPlannerApp</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3>3.12 Backend HTTP API</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-API-01</strong></td>
+<td><code>GET /health</code> shall execute <code>SELECT 1</code> against PostgreSQL and return JSON <code>{ status, db }</code> or error JSON with <code>detail</code> / <code>code</code> on failure.</td>
+</tr>
+<tr>
+<td><strong>FR-API-02</strong></td>
+<td><code>POST /auth/register</code> and <code>POST /auth/login</code> shall behave as implemented in <code>backend/src/auth.js</code> (status codes 200/201/400/401/403/409/500 as applicable).</td>
+</tr>
+<tr>
+<td><strong>FR-API-03</strong></td>
+<td>Admin endpoints shall require <code>Authorization: Bearer &lt;JWT&gt;</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-API-04</strong></td>
+<td>JWT payload shall include at minimum <code>sub</code>, <code>email</code>, <code>role</code> (see <code>signToken</code> in <code>auth.js</code>).</td>
+</tr>
+</tbody>
+</table>
+<h3>3.13 Data persistence (database)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR-DB-01</strong></td>
+<td>Schema shall support <code>users</code> with fields and checks per <code>backend/sql/init.sql</code> (including <code>registration_status</code> and <code>role</code>).</td>
+</tr>
+<tr>
+<td><strong>FR-DB-02</strong></td>
+<td>Schema shall support <code>missions</code> with owner FK, time range constraint, priority and status enums, timestamps, and indexes on <code>owner_user_id</code> and <code>status</code> as in <code>init.sql</code> / <code>migrate.js</code>.</td>
+</tr>
+<tr>
+<td><strong>FR-DB-03</strong></td>
+<td>Server startup shall run <code>ensureUserRegistrationSchema</code> and <code>ensureMissionsTable</code> before listening (see <code>server.js</code>).</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>4. Non-functional requirements</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>NFR-01</strong></td>
+<td>Client shall declare dependencies in <code>pubspec.yaml</code> (Flutter, <code>http</code>, <code>shared_preferences</code>, <code>flutter_map</code>, <code>latlong2</code>, <code>geolocator</code>, <code>camera</code>, <code>google_fonts</code>, etc.).</td>
+</tr>
+<tr>
+<td><strong>NFR-02</strong></td>
+<td>Backend shall declare runtime dependencies in <code>backend/package.json</code> (<code>express</code>, <code>pg</code>, <code>jsonwebtoken</code>, <code>bcryptjs</code>, <code>cors</code>, <code>dotenv</code>).</td>
+</tr>
+<tr>
+<td><strong>NFR-03</strong></td>
+<td><code>backend/README.md</code> shall document production guidance: strong <code>JWT_SECRET</code>, restricted <code>CORS_ORIGIN</code>, HTTPS, and future refresh-token work.</td>
+</tr>
+<tr>
+<td><strong>NFR-04</strong></td>
+<td>Root <code>README.md</code> describes the Flutter layer as <strong>wireframe</strong> with dummy repositories replaceable by APIs later.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>5. External interface requirements</h2>
+<h3>5.1 Client ↔ Auth API</h3>
+<ul>
+<li><strong>Protocol:</strong> HTTPS-capable HTTP client (<code>package:http</code>); default URL <code>http://localhost:4000</code> unless overridden by <code>--dart-define=AUTH_API_URL=...</code>.</li>
+<li><strong>Content-Type:</strong> <code>application/json</code> for POST bodies.</li>
+<li><strong>Admin requests:</strong> <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+</ul>
+<h3>5.2 Client ↔ map / location / camera</h3>
+<ul>
+<li><strong>Maps:</strong> OpenStreetMap-style tiles via <code>flutter_map</code> (see <code>MapScreen</code> and related logic files).</li>
+<li><strong>Location:</strong> <code>geolocator</code> permission and stream handling as coded.</li>
+<li><strong>Camera:</strong> <code>camera</code> package available to project; individual screens determine usage.</li>
+</ul>
+<hr>
+<h2>6. Traceability: checklist IDs (documentation only)</h2>
+<p><code>docs/FLIGHT_FEATURES_CHECKLIST.md</code> defines <strong>S01–M03</strong> checklist IDs for future completeness against a K++/agri-style GCS. Rows are <strong>documentation placeholders</strong>; the app’s vehicle setup hub screens reference these IDs in copy. Implementation status per ID is <strong>not</strong> asserted in this SRS unless verified in code separately.</p>
+<hr>
+<h2>Appendix A — Flutter route catalog (<code>AppRoutes</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Route constant</th>
+<th>Path string</th>
+<th>Screen</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>splash</code></td>
+<td><code>/splash</code></td>
+<td><code>SplashScreen</code></td>
+</tr>
+<tr>
+<td><code>shell</code></td>
+<td><code>/</code></td>
+<td><code>GcsShell</code></td>
+</tr>
+<tr>
+<td><code>auth</code></td>
+<td><code>/auth</code></td>
+<td><code>LoginScreen</code></td>
+</tr>
+<tr>
+<td><code>register</code></td>
+<td><code>/register</code></td>
+<td><code>RegisterScreen</code></td>
+</tr>
+<tr>
+<td><code>adminRegistrationRequests</code></td>
+<td><code>/admin/registration-requests</code></td>
+<td><code>AdminRegistrationRequestsScreen</code> or access denied</td>
+</tr>
+<tr>
+<td><code>missionDetails</code></td>
+<td><code>/mission-details</code></td>
+<td><code>MissionDetailsScreen</code></td>
+</tr>
+<tr>
+<td><code>missionWizard</code></td>
+<td><code>/mission-wizard</code></td>
+<td><code>MissionWizardScreen</code></td>
+</tr>
+<tr>
+<td><code>missionEditor</code></td>
+<td><code>/mission-editor</code></td>
+<td><code>MissionEditorScreen</code></td>
+</tr>
+<tr>
+<td><code>manualControl</code></td>
+<td><code>/manual-control</code></td>
+<td><code>ManualControlScreen</code></td>
+</tr>
+<tr>
+<td><code>cameraPayload</code></td>
+<td><code>/camera-payload</code></td>
+<td><code>CameraPayloadScreen</code></td>
+</tr>
+<tr>
+<td><code>telemetry</code></td>
+<td><code>/telemetry</code></td>
+<td><code>TelemetryDashboardScreen</code></td>
+</tr>
+<tr>
+<td><code>power</code></td>
+<td><code>/power</code></td>
+<td><code>PowerManagementScreen</code></td>
+</tr>
+<tr>
+<td><code>airspace</code></td>
+<td><code>/airspace</code></td>
+<td><code>AirspaceScreen</code></td>
+</tr>
+<tr>
+<td><code>replay</code></td>
+<td><code>/replay</code></td>
+<td><code>MissionReplayScreen</code></td>
+</tr>
+<tr>
+<td><code>plugins</code></td>
+<td><code>/plugins</code></td>
+<td><code>PluginManagerScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicles</code></td>
+<td><code>/vehicles</code></td>
+<td><code>MultiVehicleScreen</code></td>
+</tr>
+<tr>
+<td><code>fsmViewer</code></td>
+<td><code>/fsm-viewer</code></td>
+<td><code>FsmViewerScreen</code></td>
+</tr>
+<tr>
+<td><code>firmwareFlash</code></td>
+<td><code>/firmware-flash</code></td>
+<td><code>FirmwareFlashScreen</code></td>
+</tr>
+<tr>
+<td><code>flightModeReference</code></td>
+<td><code>/flight-mode-reference</code></td>
+<td><code>FlightModeReferenceScreen</code></td>
+</tr>
+<tr>
+<td><code>alertsInbox</code></td>
+<td><code>/alerts-inbox</code></td>
+<td><code>AlertsInboxScreen</code></td>
+</tr>
+<tr>
+<td><code>helpAbout</code></td>
+<td><code>/help-about</code></td>
+<td><code>HelpAboutScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetup</code></td>
+<td><code>/vehicle-setup</code></td>
+<td><code>VehicleSetupHubScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetupSensors</code></td>
+<td><code>/vehicle-setup-sensors</code></td>
+<td><code>SensorsCalibrationScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetupRadio</code></td>
+<td><code>/vehicle-setup-radio</code></td>
+<td><code>RadioRcScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetupBattery</code></td>
+<td><code>/vehicle-setup-battery</code></td>
+<td><code>BatteryPowerScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetupNavSafety</code></td>
+<td><code>/vehicle-setup-nav-safety</code></td>
+<td><code>NavigationArmingSafetyScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetupAgri</code></td>
+<td><code>/vehicle-setup-agri</code></td>
+<td><code>AgriPayloadScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetupOps</code></td>
+<td><code>/vehicle-setup-ops</code></td>
+<td><code>OpsLoggingScreen</code></td>
+</tr>
+<tr>
+<td><code>vehicleSetupMission</code></td>
+<td><code>/vehicle-setup-mission</code></td>
+<td><code>MissionMapCoreScreen</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Appendix B — REST endpoints implemented</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/health</code></td>
+<td>No</td>
+<td>Liveness + DB connectivity</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/register</code></td>
+<td>No</td>
+<td>Create pending pilot</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/login</code></td>
+<td>No</td>
+<td>Issue JWT for approved/relevant users</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/auth/admin/pending-registrations</code></td>
+<td>Admin JWT</td>
+<td>List pending pilots</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/admin/pending-registrations/:userId/approve</code></td>
+<td>Admin JWT</td>
+<td>Approve pilot</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/admin/pending-registrations/:userId/reject</code></td>
+<td>Admin JWT</td>
+<td>Reject pilot</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Appendix C — Explicit out-of-scope (not in repository)</h2>
+<ul>
+<li>Mission persistence <strong>HTTP API</strong> against <code>missions</code> table.</li>
+<li>Refresh tokens, token revocation lists.</li>
+<li>Live MAVLink / drone link integration (simulated / placeholder UI only).</li>
+<li>Push notifications, email delivery, or SMS.</li>
+</ul>
+<hr>
+<p><em>End of SRS document.</em></p>
+</article>
+</body>
+</html>

@@ -1,0 +1,218 @@
+"""
+Fuselage — Tooling, languages, IDE, hosting & repository reference (PDF).
+
+Outputs in this folder:
+  Fuselage_Tooling_Hosting_and_Repository.html
+  Fuselage_Tooling_Hosting_and_Repository.pdf
+
+Requires Microsoft Edge (headless --print-to-pdf).
+"""
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parent.parent
+
+HTML_OUT = HERE / "Fuselage_Tooling_Hosting_and_Repository.html"
+PDF_OUT = HERE / "Fuselage_Tooling_Hosting_and_Repository.pdf"
+
+# From `git remote get-url origin` at doc generation time (update if fork changes).
+GITHUB_ORIGIN = "https://github.com/fuselagecursor-maker/mission-planner.git"
+GITHUB_WEB = "https://github.com/fuselagecursor-maker/mission-planner"
+
+
+def _edge_print_pdf() -> None:
+    edge_candidates = [
+        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+        Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
+    ]
+    edge = next((p for p in edge_candidates if p.is_file()), None)
+    if edge is None:
+        raise RuntimeError("Microsoft Edge not found. Open the HTML file and use Print → Save as PDF.")
+    uri = HTML_OUT.as_uri()
+    subprocess.run(
+        [str(edge), "--headless=new", "--disable-gpu", f"--print-to-pdf={PDF_OUT}", uri],
+        check=True,
+        timeout=120,
+    )
+
+
+def build_html() -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Fuselage — Tooling, hosting &amp; repository</title>
+  <style>
+    @page {{ size: A4; margin: 16mm; }}
+    html {{ font-size: 10.5pt; }}
+    body {{
+      font-family: "Segoe UI", system-ui, sans-serif;
+      line-height: 1.45;
+      color: #0f172a;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 14px 18px 28px;
+    }}
+    h1 {{ font-size: 1.35rem; border-bottom: 2px solid #0f172a; padding-bottom: 6px; }}
+    h2 {{ font-size: 1.08rem; margin-top: 1.35rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; page-break-after: avoid; }}
+    h3 {{ font-size: 1rem; margin-top: 1rem; page-break-after: avoid; }}
+    .meta {{ color: #475569; font-size: 0.95rem; margin: 0.5rem 0 1rem; }}
+    a {{ color: #0369a1; word-break: break-all; }}
+    table {{ border-collapse: collapse; width: 100%; font-size: 0.9rem; margin: 10px 0 16px; }}
+    th, td {{ border: 1px solid #94a3b8; padding: 7px 9px; vertical-align: top; text-align: left; }}
+    th {{ background: #e2e8f0; }}
+    code {{ font-family: Consolas, "Courier New", monospace; font-size: 0.88em; background: #f1f5f9; padding: 0 4px; border-radius: 3px; }}
+    ul {{ margin: 0.4rem 0 0.8rem 1.2rem; }}
+    .box {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }}
+    @media print {{ body {{ padding: 0; }} a {{ color: #000; }} }}
+  </style>
+</head>
+<body>
+
+<h1>Fuselage Mission Planner — Tooling, hosting &amp; repository</h1>
+<p class="meta">Reference for languages, IDE, SDK locations, dependencies, and where code and services run. Sourced from this repository, <code>git</code> remote, <code>pubspec.yaml</code>, <code>backend/package.json</code>, <code>.github/workflows</code>, and workspace Cursor rules.</p>
+
+<h2>1. Source repository (GitHub)</h2>
+<div class="box">
+  <p><strong>Origin (clone URL):</strong><br/>
+  <a href="{GITHUB_ORIGIN}">{GITHUB_ORIGIN}</a></p>
+  <p><strong>Web UI:</strong><br/>
+  <a href="{GITHUB_WEB}">{GITHUB_WEB}</a></p>
+  <p><strong>Local workspace (this machine):</strong> <code>D:\\mission planner</code></p>
+</div>
+
+<h2>2. Languages &amp; markup</h2>
+<table>
+  <thead><tr><th>Language / format</th><th>Where used</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Dart</strong> (SDK <code>&gt;=3.4.0 &lt;4.0.0</code> per <code>pubspec.yaml</code>)</td><td>Flutter application under <code>lib/</code>, tests under <code>test/</code></td></tr>
+    <tr><td><strong>JavaScript</strong> (Node, CommonJS)</td><td>Backend under <code>backend/src/</code> (<code>server.js</code>, <code>auth.js</code>, <code>db.js</code>, <code>migrate.js</code>)</td></tr>
+    <tr><td><strong>SQL</strong></td><td>PostgreSQL schema in <code>backend/sql/</code>, migrations</td></tr>
+    <tr><td><strong>YAML</strong></td><td><code>pubspec.yaml</code>, <code>analysis_options.yaml</code> (repo root), GitHub Actions workflows</td></tr>
+    <tr><td><strong>JSON</strong></td><td><code>backend/package.json</code>, API payloads</td></tr>
+    <tr><td><strong>Markdown</strong></td><td><code>README.md</code>, <code>docs/*.md</code></td></tr>
+    <tr><td><strong>HTML / CSS</strong></td><td>Flutter web output (<code>build/web</code> when built for web)</td></tr>
+  </tbody>
+</table>
+
+<h2>3. IDE &amp; editor tooling</h2>
+<table>
+  <thead><tr><th>Tool</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Cursor</strong></td><td>Primary IDE for this workspace; AI-assisted editing; VS Code–compatible extensions and UI.</td></tr>
+    <tr><td><strong>Workspace rules</strong></td><td><code>.cursor/rules/</code> (e.g. D-drive tooling policy for caches/SDKs).</td></tr>
+    <tr><td><strong>Flutter / Dart tooling</strong></td><td><code>flutter</code>, <code>dart</code> CLI; <code>flutter pub get</code>, <code>flutter run</code>, <code>flutter build</code>; Dart analyzer &amp; <code>flutter_lints</code> (dev dependency).</td></tr>
+    <tr><td><strong>Node tooling</strong></td><td><code>npm install</code>, <code>npm run start</code> in <code>backend/</code>.</td></tr>
+    <tr><td><strong>Git</strong></td><td>Version control; remote <code>origin</code> → GitHub URL above.</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Frameworks &amp; runtimes</h2>
+<table>
+  <thead><tr><th>Component</th><th>Technology</th></tr></thead>
+  <tbody>
+    <tr><td>Mobile / desktop / web UI</td><td><strong>Flutter</strong> (Material Design)</td></tr>
+    <tr><td>HTTP API</td><td><strong>Express 5</strong> (<code>backend/package.json</code>)</td></tr>
+    <tr><td>Database</td><td><strong>PostgreSQL</strong> (driver: <code>pg</code>)</td></tr>
+    <tr><td>Auth</td><td><strong>JWT</strong> (<code>jsonwebtoken</code>), <strong>bcryptjs</strong> password hashing</td></tr>
+    <tr><td>CORS / env</td><td><code>cors</code>, <code>dotenv</code></td></tr>
+  </tbody>
+</table>
+
+<h2>5. Where SDKs, caches &amp; installs live (this workspace policy)</h2>
+<p>From <code>.cursor/rules/d-drive-tooling.mdc</code> — tooling is configured to prefer <strong>D:\\</strong> over large installs on <strong>C:\\</strong>:</p>
+<table>
+  <thead><tr><th>Item</th><th>Typical path / env</th></tr></thead>
+  <tbody>
+    <tr><td>Flutter SDK</td><td><code>D:\\flutter</code></td></tr>
+    <tr><td>Dart / Pub cache</td><td><code>D:\\dev\\pub-cache</code> (<code>PUB_CACHE</code>)</td></tr>
+    <tr><td>Android SDK</td><td><code>D:\\dev\\android-sdk</code> (<code>ANDROID_HOME</code>)</td></tr>
+    <tr><td>Android AVDs</td><td><code>D:\\dev\\android-avd</code> (<code>ANDROID_AVD_HOME</code>)</td></tr>
+    <tr><td>JDK (Gradle / Android)</td><td><code>D:\\dev\\jdk-17.0.18.8-hotspot</code> (<code>JAVA_HOME</code>)</td></tr>
+    <tr><td>Gradle user home</td><td><code>D:\\dev\\.gradle</code> (<code>GRADLE_USER_HOME</code>)</td></tr>
+    <tr><td>Node global prefix (policy)</td><td><code>D:\\dev\\npm</code></td></tr>
+    <tr><td>pip cache (policy)</td><td><code>D:\\dev\\pip-cache</code> (<code>PIP_CACHE_DIR</code>)</td></tr>
+    <tr><td>Temp for installers/CLI (policy)</td><td><code>D:\\dev\\temp</code> (<code>TEMP</code> / <code>TMP</code>)</td></tr>
+  </tbody>
+</table>
+<p><strong>Project source:</strong> application and backend code live under <code>D:\\mission planner\\</code> (not an SDK install path).</p>
+
+<h2>6. Application &amp; dependency inventory</h2>
+<h3>6.1 Flutter (<code>pubspec.yaml</code>)</h3>
+<ul>
+  <li><strong>SDK:</strong> Flutter (pinned channel per your local install; project requires Dart <code>&gt;=3.4.0 &lt;4.0.0</code>).</li>
+  <li><strong>Dependencies:</strong> <code>cupertino_icons</code>, <code>google_fonts</code>, <code>camera</code>, <code>flutter_map</code>, <code>latlong2</code>, <code>shared_preferences</code>, <code>geolocator</code>, <code>http</code>.</li>
+  <li><strong>Dev:</strong> <code>flutter_test</code>, <code>flutter_lints</code> ^4.0.0.</li>
+</ul>
+<h3>6.2 Node backend (<code>backend/package.json</code>)</h3>
+<ul>
+  <li><code>express</code> ^5.2.1, <code>pg</code> ^8.20.0, <code>jsonwebtoken</code> ^9.0.3, <code>bcryptjs</code> ^3.0.3, <code>cors</code> ^2.8.6, <code>dotenv</code> ^17.4.2.</li>
+  <li><strong>Scripts:</strong> <code>npm run start</code> / <code>npm run dev</code> → <code>node src/server.js</code>.</li>
+</ul>
+
+<h2>7. Where services &amp; data run (hosting)</h2>
+<h3>7.1 Local development (defaults in repo)</h3>
+<table>
+  <thead><tr><th>Artifact</th><th>Host / URL</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Flutter app</td><td>Device, emulator, or Chrome (web)</td><td><code>flutter run</code>; web build output in <code>build/web</code></td></tr>
+    <tr><td>Auth API</td><td><code>http://localhost:4000</code></td><td><code>PORT</code> from env or default 4000 (<code>backend/src/server.js</code>)</td></tr>
+    <tr><td>Flutter → API URL</td><td>Default <code>http://localhost:4000</code></td><td><code>AuthApi</code> uses <code>--dart-define=AUTH_API_URL=...</code> to override</td></tr>
+    <tr><td>PostgreSQL</td><td>Local or remote host from <code>backend/.env</code></td><td>Database name documented as <code>mission_planner</code> in <code>backend/README.md</code></td></tr>
+  </tbody>
+</table>
+<h3>7.2 CI / optional cloud (documented in repository)</h3>
+<p>File <code>.github/workflows/deploy-web-vercel.yml</code> (manual <code>workflow_dispatch</code>):</p>
+<ul>
+  <li><strong>Runner:</strong> <code>ubuntu-latest</code>.</li>
+  <li><strong>Steps:</strong> <code>actions/checkout</code>, <code>subosito/flutter-action</code> (stable), <code>flutter pub get</code>, <code>flutter build web --release</code> with <code>AUTH_API_URL</code> from GitHub Actions secret.</li>
+  <li><strong>Deploy target:</strong> <strong>Vercel</strong> (requires <code>VERCEL_TOKEN</code> secret); comments reference example API on <strong>Railway</strong> and CORS alignment.</li>
+</ul>
+<p><strong>Important:</strong> Actual production URLs depend on your configured secrets and Vercel project; they are not hard-coded in application source.</p>
+
+<h2>8. Document &amp; diagram PDFs (this repo)</h2>
+<ul>
+  <li><code>docs/SRS_Fuselage_Mission_Planner.md</code> / <code>.html</code> / <code>.pdf</code> — SRS (Python <code>markdown</code> + Edge print).</li>
+  <li><code>docs/arch/Fuselage_System_Architecture_and_Use_Cases.html</code> / <code>.pdf</code> — architecture + UML figures (<code>build_architecture_document.py</code>).</li>
+  <li><code>docs/arch/Fuselage_Tooling_Hosting_and_Repository.html</code> / <code>.pdf</code> — this document (<code>build_tooling_hosting_pdf.py</code>).</li>
+</ul>
+
+<h2>9. Quick command reference</h2>
+<table>
+  <thead><tr><th>Goal</th><th>Command / location</th></tr></thead>
+  <tbody>
+    <tr><td>Flutter dependencies</td><td><code>flutter pub get</code> (repo root)</td></tr>
+    <tr><td>Run mobile app</td><td><code>flutter run</code></td></tr>
+    <tr><td>Backend dependencies</td><td><code>cd backend &amp;&amp; npm install</code></td></tr>
+    <tr><td>Run API</td><td><code>cd backend &amp;&amp; npm run start</code></td></tr>
+    <tr><td>Apply DB schema</td><td>Run <code>backend/sql/init.sql</code> on PostgreSQL (see <code>backend/README.md</code>)</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:2rem;color:#64748b;font-size:0.9rem;">Generated by <code>docs/arch/build_tooling_hosting_pdf.py</code>. Regenerate: <code>python build_tooling_hosting_pdf.py</code> from <code>docs/arch</code>.</p>
+
+</body>
+</html>
+"""
+
+
+def main() -> int:
+    HTML_OUT.write_text(build_html(), encoding="utf-8")
+    print("Wrote", HTML_OUT)
+    _edge_print_pdf()
+    print("Wrote", PDF_OUT)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except Exception as e:
+        print(e, file=sys.stderr)
+        HTML_OUT.write_text(build_html(), encoding="utf-8")
+        print("HTML-only fallback:", HTML_OUT, file=sys.stderr)
+        raise

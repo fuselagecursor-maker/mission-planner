@@ -1,0 +1,663 @@
+@startuml Fuselage_Class_Diagram_Complete
+
+title Fuselage mission planner — exhaustive class diagram (generated from repo)
+
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+legend right
+  Auto-generated from lib/ and test/.
+  Stereotype af / fn / testEntry label Dart abstract-final, top-level func, test main.
+endlegend
+
+package "lib/core/app/app.dart" {
+  class "MissionPlannerApp" as lib_core_app_app_dart__MissionPlannerApp
+  class "_MissionPlannerAppState" as lib_core_app_app_dart___MissionPlannerAppState
+}
+
+package "lib/core/auth/auth_session.dart" {
+  class "AuthSession" as lib_core_auth_auth_session_dart__AuthSession
+}
+
+package "lib/core/gcs/gcs_status_model.dart" {
+  enum lib_core_gcs_gcs_status_model_dart__AlertSeverity {
+    VALUE
+  }
+  note bottom of lib_core_gcs_gcs_status_model_dart__AlertSeverity
+    Dart enum: AlertSeverity
+  end note
+  class "GcsAlert" as lib_core_gcs_gcs_status_model_dart__GcsAlert
+  enum lib_core_gcs_gcs_status_model_dart__VehicleSystemState {
+    VALUE
+  }
+  note bottom of lib_core_gcs_gcs_status_model_dart__VehicleSystemState
+    Dart enum: VehicleSystemState
+  end note
+  enum lib_core_gcs_gcs_status_model_dart__LinkType {
+    VALUE
+  }
+  note bottom of lib_core_gcs_gcs_status_model_dart__LinkType
+    Dart enum: LinkType
+  end note
+  class "GcsStatusModel" as lib_core_gcs_gcs_status_model_dart__GcsStatusModel
+}
+
+package "lib/core/routing/app_router.dart" {
+  abstract class "AppRoutes" <<af>> as lib_core_routing_app_router_dart__AppRoutes
+  abstract class "AppRouter" <<af>> as lib_core_routing_app_router_dart__AppRouter
+  class "_AdminAccessDeniedScreen" as lib_core_routing_app_router_dart___AdminAccessDeniedScreen
+  class "_UnknownRouteScreen" as lib_core_routing_app_router_dart___UnknownRouteScreen
+}
+
+package "lib/core/settings/app_settings_controller.dart" {
+  class "AppSettingsController" as lib_core_settings_app_settings_controller_dart__AppSettingsController
+  class "SettingsScope" as lib_core_settings_app_settings_controller_dart__SettingsScope
+}
+
+package "lib/core/theme/app_colors.dart" {
+  abstract class "AppColors" <<af>> as lib_core_theme_app_colors_dart__AppColors
+  abstract class "AppGradients" <<af>> as lib_core_theme_app_colors_dart__AppGradients
+}
+
+package "lib/core/theme/app_theme.dart" {
+  abstract class "AppTheme" <<af>> as lib_core_theme_app_theme_dart__AppTheme
+}
+
+package "lib/core/theme/app_typography.dart" {
+  abstract class "AppTypography" <<af>> as lib_core_theme_app_typography_dart__AppTypography
+}
+
+package "lib/core/theme/gcs_tokens.dart" {
+  abstract class "GcsColors" <<af>> as lib_core_theme_gcs_tokens_dart__GcsColors
+  abstract class "GcsLayout" <<af>> as lib_core_theme_gcs_tokens_dart__GcsLayout
+}
+
+package "lib/core/theme/theme_controller.dart" {
+  class "ThemeController" as lib_core_theme_theme_controller_dart__ThemeController
+  class "ThemeScope" as lib_core_theme_theme_controller_dart__ThemeScope
+}
+
+package "lib/core/ui/app_spacing.dart" {
+  abstract class "AppSpacing" <<af>> as lib_core_ui_app_spacing_dart__AppSpacing
+}
+
+package "lib/features/airspace/presentation/screens/airspace_screen.dart" {
+  class "AirspaceScreen" as lib_features_airspace_presentation_screens_airspace_screen_dart__AirspaceScreen
+  class "_AirspaceScreenState" as lib_features_airspace_presentation_screens_airspace_screen_dart___AirspaceScreenState
+}
+
+package "lib/features/auth/data/auth_api.dart" {
+  class "AuthApi" as lib_features_auth_data_auth_api_dart__AuthApi
+}
+
+package "lib/features/auth/presentation/screens/admin_registration_requests_screen.dart" {
+  class "AdminRegistrationRequestsScreen" as lib_features_auth_presentation_screens_admin_registration_requests_screen_dart__AdminRegistrationRequestsScreen
+  class "_AdminRegistrationRequestsScreenState" as lib_features_auth_presentation_screens_admin_registration_requests_screen_dart___AdminRegistrationRequestsScreenState
+}
+
+package "lib/features/auth/presentation/screens/login_screen.dart" {
+  class "LoginScreen" as lib_features_auth_presentation_screens_login_screen_dart__LoginScreen
+  class "_LoginScreenState" as lib_features_auth_presentation_screens_login_screen_dart___LoginScreenState
+}
+
+package "lib/features/auth/presentation/screens/register_screen.dart" {
+  class "RegisterScreen" as lib_features_auth_presentation_screens_register_screen_dart__RegisterScreen
+  class "_RegisterScreenState" as lib_features_auth_presentation_screens_register_screen_dart___RegisterScreenState
+}
+
+package "lib/features/camera/presentation/screens/camera_payload_screen.dart" {
+  class "CameraPayloadScreen" as lib_features_camera_presentation_screens_camera_payload_screen_dart__CameraPayloadScreen
+  enum lib_features_camera_presentation_screens_camera_payload_screen_dart___CameraSource {
+    VALUE
+  }
+  note bottom of lib_features_camera_presentation_screens_camera_payload_screen_dart___CameraSource
+    Dart enum: _CameraSource
+  end note
+  class "_CameraPayloadScreenState" as lib_features_camera_presentation_screens_camera_payload_screen_dart___CameraPayloadScreenState
+  class "_LiveFeedPanel" as lib_features_camera_presentation_screens_camera_payload_screen_dart___LiveFeedPanel
+  class "_GimbalPanel" as lib_features_camera_presentation_screens_camera_payload_screen_dart___GimbalPanel
+  class "_CapturePanel" as lib_features_camera_presentation_screens_camera_payload_screen_dart___CapturePanel
+  class "_OsdChip" as lib_features_camera_presentation_screens_camera_payload_screen_dart___OsdChip
+}
+
+package "lib/features/dashboard/presentation/screens/alerts_inbox_screen.dart" {
+  class "AlertsInboxScreen" as lib_features_dashboard_presentation_screens_alerts_inbox_screen_dart__AlertsInboxScreen
+  class "_AlertItem" as lib_features_dashboard_presentation_screens_alerts_inbox_screen_dart___AlertItem
+  enum lib_features_dashboard_presentation_screens_alerts_inbox_screen_dart___Severity {
+    VALUE
+  }
+  note bottom of lib_features_dashboard_presentation_screens_alerts_inbox_screen_dart___Severity
+    Dart enum: _Severity
+  end note
+  class "_SeverityDot" as lib_features_dashboard_presentation_screens_alerts_inbox_screen_dart___SeverityDot
+}
+
+package "lib/features/dashboard/presentation/screens/dashboard_screen.dart" {
+  class "DashboardScreen" as lib_features_dashboard_presentation_screens_dashboard_screen_dart__DashboardScreen
+  class "_OverviewGrid" as lib_features_dashboard_presentation_screens_dashboard_screen_dart___OverviewGrid
+}
+
+package "lib/features/firmware/presentation/screens/firmware_flash_screen.dart" {
+  class "FirmwareFlashScreen" as lib_features_firmware_presentation_screens_firmware_flash_screen_dart__FirmwareFlashScreen
+}
+
+package "lib/features/flight_modes/presentation/screens/flight_mode_reference_screen.dart" {
+  class "FlightModeReferenceScreen" as lib_features_flight_modes_presentation_screens_flight_mode_reference_screen_dart__FlightModeReferenceScreen
+  class "_ModeTile" as lib_features_flight_modes_presentation_screens_flight_mode_reference_screen_dart___ModeTile
+}
+
+package "lib/features/fsm/presentation/screens/fsm_viewer_screen.dart" {
+  class "FsmViewerScreen" as lib_features_fsm_presentation_screens_fsm_viewer_screen_dart__FsmViewerScreen
+  class "_TransitionTile" as lib_features_fsm_presentation_screens_fsm_viewer_screen_dart___TransitionTile
+  class "_DividerLine" as lib_features_fsm_presentation_screens_fsm_viewer_screen_dart___DividerLine
+}
+
+package "lib/features/help/presentation/screens/help_about_screen.dart" {
+  class "HelpAboutScreen" as lib_features_help_presentation_screens_help_about_screen_dart__HelpAboutScreen
+  class "_TipTile" as lib_features_help_presentation_screens_help_about_screen_dart___TipTile
+}
+
+package "lib/features/manual_control/presentation/screens/manual_control_screen.dart" {
+  class "ManualControlScreen" as lib_features_manual_control_presentation_screens_manual_control_screen_dart__ManualControlScreen
+  class "_ManualControlScreenState" as lib_features_manual_control_presentation_screens_manual_control_screen_dart___ManualControlScreenState
+  class "_ManualTopBar" as lib_features_manual_control_presentation_screens_manual_control_screen_dart___ManualTopBar
+  class "_MiniHudPanel" as lib_features_manual_control_presentation_screens_manual_control_screen_dart___MiniHudPanel
+  class "_JoystickPanel" as lib_features_manual_control_presentation_screens_manual_control_screen_dart___JoystickPanel
+  class "_VirtualJoystick" as lib_features_manual_control_presentation_screens_manual_control_screen_dart___VirtualJoystick
+  class "_VirtualJoystickState" as lib_features_manual_control_presentation_screens_manual_control_screen_dart___VirtualJoystickState
+}
+
+package "lib/features/map/presentation/logic/airspace_map.dart" {
+  class "isInDemoNfz(...)" <<fn>> as lib_features_map_presentation_logic_airspace_map_dart__isInDemoNfz
+}
+
+package "lib/features/map/presentation/logic/simulated_telemetry.dart" {
+  class "SimulatedTelemetry" as lib_features_map_presentation_logic_simulated_telemetry_dart__SimulatedTelemetry
+}
+
+package "lib/features/map/presentation/screens/map_screen.dart" {
+  class "MapScreen" as lib_features_map_presentation_screens_map_screen_dart__MapScreen
+  class "_MapScreenState" as lib_features_map_presentation_screens_map_screen_dart___MapScreenState
+  class "_BottomDockOverlay" as lib_features_map_presentation_screens_map_screen_dart___BottomDockOverlay
+  class "_GcsBottomMissionRow" as lib_features_map_presentation_screens_map_screen_dart___GcsBottomMissionRow
+  class "_ModeTag" as lib_features_map_presentation_screens_map_screen_dart___ModeTag
+  class "_HomeMarker" as lib_features_map_presentation_screens_map_screen_dart___HomeMarker
+  class "_PhoneLocationMarker" as lib_features_map_presentation_screens_map_screen_dart___PhoneLocationMarker
+  class "_PhoneLocationPanel" as lib_features_map_presentation_screens_map_screen_dart___PhoneLocationPanel
+  class "_PhoneGpsCollapsible" as lib_features_map_presentation_screens_map_screen_dart___PhoneGpsCollapsible
+  class "_RightPanelsDock" as lib_features_map_presentation_screens_map_screen_dart___RightPanelsDock
+  class "_PanelSwitchTabs" as lib_features_map_presentation_screens_map_screen_dart___PanelSwitchTabs
+  class "_MapGcsQuickRail" as lib_features_map_presentation_screens_map_screen_dart___MapGcsQuickRail
+  class "_MapFab" as lib_features_map_presentation_screens_map_screen_dart___MapFab
+  class "_FabMenuSheet" as lib_features_map_presentation_screens_map_screen_dart___FabMenuSheet
+  class "_MissionSummarySheet" as lib_features_map_presentation_screens_map_screen_dart___MissionSummarySheet
+  class "_SummaryMetric" as lib_features_map_presentation_screens_map_screen_dart___SummaryMetric
+  class "_FlightModeTransitionBanner" as lib_features_map_presentation_screens_map_screen_dart___FlightModeTransitionBanner
+  class "_MissionWp" as lib_features_map_presentation_screens_map_screen_dart___MissionWp
+  class "_PreArmCheckSheet" as lib_features_map_presentation_screens_map_screen_dart___PreArmCheckSheet
+  class "_PreArmCheckSheetState" as lib_features_map_presentation_screens_map_screen_dart___PreArmCheckSheetState
+  class "_CheckTile" as lib_features_map_presentation_screens_map_screen_dart___CheckTile
+}
+
+package "lib/features/map/presentation/widgets/map_layers_sheet.dart" {
+  class "MapLayersSheet" as lib_features_map_presentation_widgets_map_layers_sheet_dart__MapLayersSheet
+}
+
+package "lib/features/map/presentation/widgets/map_viewport.dart" {
+  abstract class "MapTileTemplates" <<af>> as lib_features_map_presentation_widgets_map_viewport_dart__MapTileTemplates
+  class "MapViewport" as lib_features_map_presentation_widgets_map_viewport_dart__MapViewport
+  class "MapWaypoint" as lib_features_map_presentation_widgets_map_viewport_dart__MapWaypoint
+  class "MapVehicle" as lib_features_map_presentation_widgets_map_viewport_dart__MapVehicle
+  class "_VehicleMarker" as lib_features_map_presentation_widgets_map_viewport_dart___VehicleMarker
+  class "_VehicleMarkerState" as lib_features_map_presentation_widgets_map_viewport_dart___VehicleMarkerState
+  class "_WaypointMarker" as lib_features_map_presentation_widgets_map_viewport_dart___WaypointMarker
+  class "_WaypointMarkerState" as lib_features_map_presentation_widgets_map_viewport_dart___WaypointMarkerState
+}
+
+package "lib/features/map/presentation/widgets/map_zoom_rail.dart" {
+  class "MapZoomRail" as lib_features_map_presentation_widgets_map_zoom_rail_dart__MapZoomRail
+  class "_MapZoomButton" as lib_features_map_presentation_widgets_map_zoom_rail_dart___MapZoomButton
+}
+
+package "lib/features/mission/data/dummy_mission_repository.dart" {
+  class "DummyMissionRepository" as lib_features_mission_data_dummy_mission_repository_dart__DummyMissionRepository
+}
+
+package "lib/features/mission/domain/models/mission.dart" {
+  enum lib_features_mission_domain_models_mission_dart__MissionPriority {
+    VALUE
+  }
+  note bottom of lib_features_mission_domain_models_mission_dart__MissionPriority
+    Dart enum: MissionPriority
+  end note
+  enum lib_features_mission_domain_models_mission_dart__MissionStatus {
+    VALUE
+  }
+  note bottom of lib_features_mission_domain_models_mission_dart__MissionStatus
+    Dart enum: MissionStatus
+  end note
+  class "Mission" as lib_features_mission_domain_models_mission_dart__Mission
+}
+
+package "lib/features/mission/domain/repositories/mission_repository.dart" {
+  abstract class "MissionRepository" as lib_features_mission_domain_repositories_mission_repository_dart__MissionRepository
+}
+
+package "lib/features/mission/presentation/models/waypoint_vm.dart" {
+  class "WaypointVm" as lib_features_mission_presentation_models_waypoint_vm_dart__WaypointVm
+}
+
+package "lib/features/mission/presentation/screens/mission_details_screen.dart" {
+  class "MissionDetailsScreen" as lib_features_mission_presentation_screens_mission_details_screen_dart__MissionDetailsScreen
+  class "_DetailsSkeleton" as lib_features_mission_presentation_screens_mission_details_screen_dart___DetailsSkeleton
+}
+
+package "lib/features/mission/presentation/screens/mission_editor_screen.dart" {
+  class "MissionEditorScreen" as lib_features_mission_presentation_screens_mission_editor_screen_dart__MissionEditorScreen
+  class "_MissionEditorScreenState" as lib_features_mission_presentation_screens_mission_editor_screen_dart___MissionEditorScreenState
+}
+
+package "lib/features/mission/presentation/screens/mission_wizard_screen.dart" {
+  class "MissionWizardScreen" as lib_features_mission_presentation_screens_mission_wizard_screen_dart__MissionWizardScreen
+  class "_MissionWizardScreenState" as lib_features_mission_presentation_screens_mission_wizard_screen_dart___MissionWizardScreenState
+  class "_DateField" as lib_features_mission_presentation_screens_mission_wizard_screen_dart___DateField
+}
+
+package "lib/features/mission/presentation/screens/missions_screen.dart" {
+  enum lib_features_mission_presentation_screens_missions_screen_dart___MissionSort {
+    VALUE
+  }
+  note bottom of lib_features_mission_presentation_screens_missions_screen_dart___MissionSort
+    Dart enum: _MissionSort
+  end note
+  class "MissionsScreen" as lib_features_mission_presentation_screens_missions_screen_dart__MissionsScreen
+  class "_MissionsScreenState" as lib_features_mission_presentation_screens_missions_screen_dart___MissionsScreenState
+}
+
+package "lib/features/mission/presentation/widgets/mission_planning_form.dart" {
+  class "MissionPlanningForm" as lib_features_mission_presentation_widgets_mission_planning_form_dart__MissionPlanningForm
+  class "_MissionPlanningFormState" as lib_features_mission_presentation_widgets_mission_planning_form_dart___MissionPlanningFormState
+  class "_DateField" as lib_features_mission_presentation_widgets_mission_planning_form_dart___DateField
+}
+
+package "lib/features/mission/presentation/widgets/mission_storage_dialogs.dart" {
+  class "showSaveMissionDialog(...)" <<fn>> as lib_features_mission_presentation_widgets_mission_storage_dialogs_dart__showSaveMissionDialog
+  class "showLoadMissionDialog(...)" <<fn>> as lib_features_mission_presentation_widgets_mission_storage_dialogs_dart__showLoadMissionDialog
+}
+
+package "lib/features/mission/presentation/widgets/waypoint_property_sheet.dart" {
+  class "WaypointPropertySheet" as lib_features_mission_presentation_widgets_waypoint_property_sheet_dart__WaypointPropertySheet
+  class "_WaypointPropertySheetState" as lib_features_mission_presentation_widgets_waypoint_property_sheet_dart___WaypointPropertySheetState
+}
+
+package "lib/features/mission/presentation/widgets/waypoints_placeholder.dart" {
+  class "WaypointsPlaceholder" as lib_features_mission_presentation_widgets_waypoints_placeholder_dart__WaypointsPlaceholder
+}
+
+package "lib/features/plugins/presentation/screens/plugin_manager_screen.dart" {
+  class "PluginManagerScreen" as lib_features_plugins_presentation_screens_plugin_manager_screen_dart__PluginManagerScreen
+  class "_PluginManagerScreenState" as lib_features_plugins_presentation_screens_plugin_manager_screen_dart___PluginManagerScreenState
+  class "_ModuleTile" as lib_features_plugins_presentation_screens_plugin_manager_screen_dart___ModuleTile
+  class "_DividerLine" as lib_features_plugins_presentation_screens_plugin_manager_screen_dart___DividerLine
+}
+
+package "lib/features/power/presentation/screens/power_management_screen.dart" {
+  class "PowerManagementScreen" as lib_features_power_presentation_screens_power_management_screen_dart__PowerManagementScreen
+}
+
+package "lib/features/replay/domain/replay_session.dart" {
+  class "ReplaySample" as lib_features_replay_domain_replay_session_dart__ReplaySample
+  enum lib_features_replay_domain_replay_session_dart__ReplayEventKind {
+    VALUE
+  }
+  note bottom of lib_features_replay_domain_replay_session_dart__ReplayEventKind
+    Dart enum: ReplayEventKind
+  end note
+  class "ReplayEvent" as lib_features_replay_domain_replay_session_dart__ReplayEvent
+  class "FlightReplayLog" as lib_features_replay_domain_replay_session_dart__FlightReplayLog
+}
+
+package "lib/features/replay/presentation/screens/mission_replay_screen.dart" {
+  class "MissionReplayScreen" as lib_features_replay_presentation_screens_mission_replay_screen_dart__MissionReplayScreen
+  class "_MissionReplayScreenState" as lib_features_replay_presentation_screens_mission_replay_screen_dart___MissionReplayScreenState
+  class "_ReplayHeroHeader" as lib_features_replay_presentation_screens_mission_replay_screen_dart___ReplayHeroHeader
+  class "_ReplayMapPanel" as lib_features_replay_presentation_screens_mission_replay_screen_dart___ReplayMapPanel
+  class "_TimelinePanel" as lib_features_replay_presentation_screens_mission_replay_screen_dart___TimelinePanel
+  class "_TelemetryAndGraphPanel" as lib_features_replay_presentation_screens_mission_replay_screen_dart___TelemetryAndGraphPanel
+  class "_EventTicksPainter" as lib_features_replay_presentation_screens_mission_replay_screen_dart___EventTicksPainter
+  class "_AltitudeReplayGraph" as lib_features_replay_presentation_screens_mission_replay_screen_dart___AltitudeReplayGraph
+  class "_AltitudeGraphPainter" as lib_features_replay_presentation_screens_mission_replay_screen_dart___AltitudeGraphPainter
+}
+
+package "lib/features/settings/presentation/screens/settings_screen.dart" {
+  enum lib_features_settings_presentation_screens_settings_screen_dart___ConnectionKind {
+    VALUE
+  }
+  note bottom of lib_features_settings_presentation_screens_settings_screen_dart___ConnectionKind
+    Dart enum: _ConnectionKind
+  end note
+  class "SettingsScreen" as lib_features_settings_presentation_screens_settings_screen_dart__SettingsScreen
+  class "_SettingsScreenState" as lib_features_settings_presentation_screens_settings_screen_dart___SettingsScreenState
+}
+
+package "lib/features/shell/presentation/app_shell.dart" {
+  class "AppShell" as lib_features_shell_presentation_app_shell_dart__AppShell
+  class "_AppShellState" as lib_features_shell_presentation_app_shell_dart___AppShellState
+  class "_DashboardBody" as lib_features_shell_presentation_app_shell_dart___DashboardBody
+  class "_TabNavigator" as lib_features_shell_presentation_app_shell_dart___TabNavigator
+}
+
+package "lib/features/shell/presentation/widgets/dashboard_scaffold.dart" {
+  class "DashboardScaffold" as lib_features_shell_presentation_widgets_dashboard_scaffold_dart__DashboardScaffold
+}
+
+package "lib/features/shell/presentation/widgets/sidebar_nav.dart" {
+  class "SidebarNavDestination" as lib_features_shell_presentation_widgets_sidebar_nav_dart__SidebarNavDestination
+  class "SidebarNav" as lib_features_shell_presentation_widgets_sidebar_nav_dart__SidebarNav
+  class "_SidebarTile" as lib_features_shell_presentation_widgets_sidebar_nav_dart___SidebarTile
+  class "_StatusFooter" as lib_features_shell_presentation_widgets_sidebar_nav_dart___StatusFooter
+}
+
+package "lib/features/shell/presentation/widgets/top_navbar.dart" {
+  class "TopNavbar" as lib_features_shell_presentation_widgets_top_navbar_dart__TopNavbar
+}
+
+package "lib/features/shell/shell_tabs.dart" {
+  abstract class "ShellTabs" <<af>> as lib_features_shell_shell_tabs_dart__ShellTabs
+}
+
+package "lib/features/splash/presentation/screens/splash_screen.dart" {
+  class "SplashScreen" as lib_features_splash_presentation_screens_splash_screen_dart__SplashScreen
+  class "_SplashScreenState" as lib_features_splash_presentation_screens_splash_screen_dart___SplashScreenState
+}
+
+package "lib/features/tasks/data/dummy_tasks_repository.dart" {
+  class "DummyTasksRepository" as lib_features_tasks_data_dummy_tasks_repository_dart__DummyTasksRepository
+}
+
+package "lib/features/tasks/domain/models/agent.dart" {
+  enum lib_features_tasks_domain_models_agent_dart__AgentStatus {
+    VALUE
+  }
+  note bottom of lib_features_tasks_domain_models_agent_dart__AgentStatus
+    Dart enum: AgentStatus
+  end note
+  class "Agent" as lib_features_tasks_domain_models_agent_dart__Agent
+}
+
+package "lib/features/tasks/domain/models/mission_task.dart" {
+  enum lib_features_tasks_domain_models_mission_task_dart__TaskStatus {
+    VALUE
+  }
+  note bottom of lib_features_tasks_domain_models_mission_task_dart__TaskStatus
+    Dart enum: TaskStatus
+  end note
+  class "MissionTask" as lib_features_tasks_domain_models_mission_task_dart__MissionTask
+}
+
+package "lib/features/tasks/domain/repositories/tasks_repository.dart" {
+  abstract class "TasksRepository" as lib_features_tasks_domain_repositories_tasks_repository_dart__TasksRepository
+}
+
+package "lib/features/tasks/presentation/screens/tasks_screen.dart" {
+  enum lib_features_tasks_presentation_screens_tasks_screen_dart___TaskSort {
+    VALUE
+  }
+  note bottom of lib_features_tasks_presentation_screens_tasks_screen_dart___TaskSort
+    Dart enum: _TaskSort
+  end note
+  class "TasksScreen" as lib_features_tasks_presentation_screens_tasks_screen_dart__TasksScreen
+  class "_TasksScreenState" as lib_features_tasks_presentation_screens_tasks_screen_dart___TasksScreenState
+}
+
+package "lib/features/telemetry/presentation/screens/telemetry_dashboard_screen.dart" {
+  class "TelemetryDashboardScreen" as lib_features_telemetry_presentation_screens_telemetry_dashboard_screen_dart__TelemetryDashboardScreen
+  class "_TelemetryDashboardScreenState" as lib_features_telemetry_presentation_screens_telemetry_dashboard_screen_dart___TelemetryDashboardScreenState
+  class "_InstrumentCard" as lib_features_telemetry_presentation_screens_telemetry_dashboard_screen_dart___InstrumentCard
+  class "_MetricTile" as lib_features_telemetry_presentation_screens_telemetry_dashboard_screen_dart___MetricTile
+  class "_BottomActionStrip" as lib_features_telemetry_presentation_screens_telemetry_dashboard_screen_dart___BottomActionStrip
+}
+
+package "lib/features/vehicle_setup/domain/vehicle_feature_item.dart" {
+  class "VehicleFeatureItem" as lib_features_vehicle_setup_domain_vehicle_feature_item_dart__VehicleFeatureItem
+}
+
+package "lib/features/vehicle_setup/presentation/screens/agri_payload_screen.dart" {
+  class "AgriPayloadScreen" as lib_features_vehicle_setup_presentation_screens_agri_payload_screen_dart__AgriPayloadScreen
+}
+
+package "lib/features/vehicle_setup/presentation/screens/battery_power_screen.dart" {
+  class "BatteryPowerScreen" as lib_features_vehicle_setup_presentation_screens_battery_power_screen_dart__BatteryPowerScreen
+}
+
+package "lib/features/vehicle_setup/presentation/screens/mission_map_core_screen.dart" {
+  class "MissionMapCoreScreen" as lib_features_vehicle_setup_presentation_screens_mission_map_core_screen_dart__MissionMapCoreScreen
+}
+
+package "lib/features/vehicle_setup/presentation/screens/navigation_arming_safety_screen.dart" {
+  class "NavigationArmingSafetyScreen" as lib_features_vehicle_setup_presentation_screens_navigation_arming_safety_screen_dart__NavigationArmingSafetyScreen
+}
+
+package "lib/features/vehicle_setup/presentation/screens/ops_logging_screen.dart" {
+  class "OpsLoggingScreen" as lib_features_vehicle_setup_presentation_screens_ops_logging_screen_dart__OpsLoggingScreen
+}
+
+package "lib/features/vehicle_setup/presentation/screens/radio_rc_screen.dart" {
+  class "RadioRcScreen" as lib_features_vehicle_setup_presentation_screens_radio_rc_screen_dart__RadioRcScreen
+}
+
+package "lib/features/vehicle_setup/presentation/screens/sensors_calibration_screen.dart" {
+  class "SensorsCalibrationScreen" as lib_features_vehicle_setup_presentation_screens_sensors_calibration_screen_dart__SensorsCalibrationScreen
+}
+
+package "lib/features/vehicle_setup/presentation/screens/vehicle_setup_hub_screen.dart" {
+  class "_SectionLink" as lib_features_vehicle_setup_presentation_screens_vehicle_setup_hub_screen_dart___SectionLink
+  class "VehicleSetupHubScreen" as lib_features_vehicle_setup_presentation_screens_vehicle_setup_hub_screen_dart__VehicleSetupHubScreen
+}
+
+package "lib/features/vehicle_setup/presentation/widgets/vehicle_feature_list.dart" {
+  class "VehicleFeatureList" as lib_features_vehicle_setup_presentation_widgets_vehicle_feature_list_dart__VehicleFeatureList
+}
+
+package "lib/features/vehicle_setup/presentation/widgets/vehicle_setup_section_scaffold.dart" {
+  class "VehicleSetupSectionScaffold" as lib_features_vehicle_setup_presentation_widgets_vehicle_setup_section_scaffold_dart__VehicleSetupSectionScaffold
+}
+
+package "lib/features/vehicles/presentation/screens/multi_vehicle_screen.dart" {
+  class "MultiVehicleScreen" as lib_features_vehicles_presentation_screens_multi_vehicle_screen_dart__MultiVehicleScreen
+  class "_MultiVehicleScreenState" as lib_features_vehicles_presentation_screens_multi_vehicle_screen_dart___MultiVehicleScreenState
+  class "_VehicleSelectorPanel" as lib_features_vehicles_presentation_screens_multi_vehicle_screen_dart___VehicleSelectorPanel
+  class "_BroadcastPanel" as lib_features_vehicles_presentation_screens_multi_vehicle_screen_dart___BroadcastPanel
+  class "_VehicleMiniCard" as lib_features_vehicles_presentation_screens_multi_vehicle_screen_dart___VehicleMiniCard
+}
+
+package "lib/screens/gcs_shell.dart" {
+  class "GcsShell" as lib_screens_gcs_shell_dart__GcsShell
+  class "_GcsShellState" as lib_screens_gcs_shell_dart___GcsShellState
+}
+
+package "lib/screens/logs_page.dart" {
+  class "LogsPage" as lib_screens_logs_page_dart__LogsPage
+  class "_TacticalPageScaffold" as lib_screens_logs_page_dart___TacticalPageScaffold
+}
+
+package "lib/screens/mission_page.dart" {
+  class "MissionPage" as lib_screens_mission_page_dart__MissionPage
+  class "_TacticalPageScaffold" as lib_screens_mission_page_dart___TacticalPageScaffold
+}
+
+package "lib/screens/settings_page.dart" {
+  class "SettingsPage" as lib_screens_settings_page_dart__SettingsPage
+  class "_ToggleTile" as lib_screens_settings_page_dart___ToggleTile
+  class "_TacticalPageScaffold" as lib_screens_settings_page_dart___TacticalPageScaffold
+}
+
+package "lib/shared/widgets/app_drawer.dart" {
+  class "AppDrawer" as lib_shared_widgets_app_drawer_dart__AppDrawer
+  class "_NavSectionLabel" as lib_shared_widgets_app_drawer_dart___NavSectionLabel
+  class "_NavDivider" as lib_shared_widgets_app_drawer_dart___NavDivider
+  class "_NavTile" as lib_shared_widgets_app_drawer_dart___NavTile
+}
+
+package "lib/shared/widgets/buttons/gradient_button.dart" {
+  class "GradientButton" as lib_shared_widgets_buttons_gradient_button_dart__GradientButton
+  class "_GradientButtonState" as lib_shared_widgets_buttons_gradient_button_dart___GradientButtonState
+}
+
+package "lib/shared/widgets/connection_status_banner.dart" {
+  enum lib_shared_widgets_connection_status_banner_dart__ConnectionStateLabel {
+    VALUE
+  }
+  note bottom of lib_shared_widgets_connection_status_banner_dart__ConnectionStateLabel
+    Dart enum: ConnectionStateLabel
+  end note
+  class "ConnectionStatusBanner" as lib_shared_widgets_connection_status_banner_dart__ConnectionStatusBanner
+}
+
+package "lib/shared/widgets/emergency_stop_button.dart" {
+  class "EmergencyStopButton" as lib_shared_widgets_emergency_stop_button_dart__EmergencyStopButton
+  class "_EmergencyStopButtonState" as lib_shared_widgets_emergency_stop_button_dart___EmergencyStopButtonState
+  class "_CountdownDialog" as lib_shared_widgets_emergency_stop_button_dart___CountdownDialog
+  class "_CountdownDialogState" as lib_shared_widgets_emergency_stop_button_dart___CountdownDialogState
+}
+
+package "lib/shared/widgets/gcs/alert_banner.dart" {
+  class "AlertBanner" as lib_shared_widgets_gcs_alert_banner_dart__AlertBanner
+}
+
+package "lib/shared/widgets/gcs/gcs_bottom_dock.dart" {
+  class "GcsBottomDock" as lib_shared_widgets_gcs_gcs_bottom_dock_dart__GcsBottomDock
+  class "_LogTerminal" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___LogTerminal
+  class "_SparklineStub" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___SparklineStub
+  class "_DockHudCard" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___DockHudCard
+  class "_HudTapeColumn" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___HudTapeColumn
+  class "_TickMark" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___TickMark
+  class "_AttitudeDisplay" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___AttitudeDisplay
+  class "_PfdPainter" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___PfdPainter
+  class "_AltStubPainter" as lib_shared_widgets_gcs_gcs_bottom_dock_dart___AltStubPainter
+}
+
+package "lib/shared/widgets/gcs/gcs_left_control_rail.dart" {
+  class "GcsLeftControlRail" as lib_shared_widgets_gcs_gcs_left_control_rail_dart__GcsLeftControlRail
+  class "_GcsPillButton" as lib_shared_widgets_gcs_gcs_left_control_rail_dart___GcsPillButton
+  class "_GcsPillButtonState" as lib_shared_widgets_gcs_gcs_left_control_rail_dart___GcsPillButtonState
+  class "_GcsOutlineButton" as lib_shared_widgets_gcs_gcs_left_control_rail_dart___GcsOutlineButton
+  class "_GcsOutlineButtonState" as lib_shared_widgets_gcs_gcs_left_control_rail_dart___GcsOutlineButtonState
+  class "_EmergencyStop" as lib_shared_widgets_gcs_gcs_left_control_rail_dart___EmergencyStop
+  class "_EmergencyStopState" as lib_shared_widgets_gcs_gcs_left_control_rail_dart___EmergencyStopState
+}
+
+package "lib/shared/widgets/gcs/gcs_metric_card.dart" {
+  class "GcsMetricCard" as lib_shared_widgets_gcs_gcs_metric_card_dart__GcsMetricCard
+  class "_GcsMetricCardState" as lib_shared_widgets_gcs_gcs_metric_card_dart___GcsMetricCardState
+}
+
+package "lib/shared/widgets/gcs/gcs_telemetry_deck.dart" {
+  class "GcsTelemetryDeck" as lib_shared_widgets_gcs_gcs_telemetry_deck_dart__GcsTelemetryDeck
+}
+
+package "lib/shared/widgets/gcs/gcs_top_status_bar.dart" {
+  class "GcsTopStatusBar" as lib_shared_widgets_gcs_gcs_top_status_bar_dart__GcsTopStatusBar
+  class "_StatusPill" as lib_shared_widgets_gcs_gcs_top_status_bar_dart___StatusPill
+}
+
+package "lib/shared/widgets/gcs/manual_control_panel.dart" {
+  class "ManualControlPanel" as lib_shared_widgets_gcs_manual_control_panel_dart__ManualControlPanel
+  class "_ManualControlPanelState" as lib_shared_widgets_gcs_manual_control_panel_dart___ManualControlPanelState
+  class "_AxisSlider" as lib_shared_widgets_gcs_manual_control_panel_dart___AxisSlider
+}
+
+package "lib/shared/widgets/gcs/map_hud_overlay.dart" {
+  class "MapHudOverlay" as lib_shared_widgets_gcs_map_hud_overlay_dart__MapHudOverlay
+  class "_CompassChip" as lib_shared_widgets_gcs_map_hud_overlay_dart___CompassChip
+}
+
+package "lib/shared/widgets/gcs/mission_progress_widget.dart" {
+  class "MissionProgressWidget" as lib_shared_widgets_gcs_mission_progress_widget_dart__MissionProgressWidget
+}
+
+package "lib/shared/widgets/gcs/rth_feedback_widget.dart" {
+  class "RthFeedbackWidget" as lib_shared_widgets_gcs_rth_feedback_widget_dart__RthFeedbackWidget
+}
+
+package "lib/shared/widgets/glass/glass_card.dart" {
+  class "GlassCard" as lib_shared_widgets_glass_glass_card_dart__GlassCard
+}
+
+package "lib/shared/widgets/placeholder_card.dart" {
+  class "PlaceholderCard" as lib_shared_widgets_placeholder_card_dart__PlaceholderCard
+}
+
+package "lib/shared/widgets/placeholder_panel.dart" {
+  class "PlaceholderPanel" as lib_shared_widgets_placeholder_panel_dart__PlaceholderPanel
+}
+
+package "lib/shared/widgets/section_header.dart" {
+  class "SectionHeader" as lib_shared_widgets_section_header_dart__SectionHeader
+}
+
+package "lib/shared/widgets/skeletons/skeleton_box.dart" {
+  class "SkeletonBox" as lib_shared_widgets_skeletons_skeleton_box_dart__SkeletonBox
+}
+
+package "lib/shared/widgets/skeletons/skeleton_list_tile.dart" {
+  class "SkeletonListTile" as lib_shared_widgets_skeletons_skeleton_list_tile_dart__SkeletonListTile
+}
+
+package "lib/shared/widgets/status_pill.dart" {
+  class "StatusPill" as lib_shared_widgets_status_pill_dart__StatusPill
+}
+
+package "lib/widgets/gcs_right_telemetry_panel.dart" {
+  class "GcsRightTelemetryPanel" as lib_widgets_gcs_right_telemetry_panel_dart__GcsRightTelemetryPanel
+  class "_HandleButton" as lib_widgets_gcs_right_telemetry_panel_dart___HandleButton
+}
+
+package "lib/widgets/gcs_sidebar.dart" {
+  enum lib_widgets_gcs_sidebar_dart__GcsNavSection {
+    VALUE
+  }
+  note bottom of lib_widgets_gcs_sidebar_dart__GcsNavSection
+    Dart enum: GcsNavSection
+  end note
+  class "GcsSidebar" as lib_widgets_gcs_sidebar_dart__GcsSidebar
+  class "_SidebarHeader" as lib_widgets_gcs_sidebar_dart___SidebarHeader
+  class "_SidebarItems" as lib_widgets_gcs_sidebar_dart___SidebarItems
+  class "_NavItem" as lib_widgets_gcs_sidebar_dart___NavItem
+}
+
+package "lib/widgets/gcs_top_bar.dart" {
+  class "GcsTopBarOverlay" as lib_widgets_gcs_top_bar_dart__GcsTopBarOverlay
+}
+
+package "test/map_screen_test.dart" {
+  class "void main()" <<testEntry>> as test_map_screen_test_dart__main
+}
+
+package "test/widget_test.dart" {
+  class "void main()" <<testEntry>> as test_widget_test_dart__main
+}
+
+lib_features_mission_data_dummy_mission_repository_dart__DummyMissionRepository ..|> lib_features_mission_domain_repositories_mission_repository_dart__MissionRepository
+lib_features_tasks_data_dummy_tasks_repository_dart__DummyTasksRepository ..|> lib_features_tasks_domain_repositories_tasks_repository_dart__TasksRepository
+lib_core_app_app_dart__MissionPlannerApp +-- lib_core_app_app_dart___MissionPlannerAppState
+
+package "backend/src (JavaScript)" {
+  class "Express app (server.js)" as NODE_server
+  class "auth router export (auth.js)" as NODE_auth
+  class "pg pool & query() (db.js)" as NODE_db
+  class "ensureUserRegistrationSchema | ensureMissionsTable (migrate.js)" as NODE_migrate
+}
+NODE_server --> NODE_auth
+NODE_server ..> NODE_migrate
+NODE_auth ..> NODE_db
+NODE_migrate ..> NODE_db
+
+note bottom
+  Import / use dependencies not drawn.
+  backend/src shown as coarse Node artefacts (not Dart classes).
+  Regenerate: python docs/arch/generate_class_diagram.py
+end note
+
+@enduml

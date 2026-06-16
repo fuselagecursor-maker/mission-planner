@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 const db = require("./db");
+const { ensureUserRegistrationSchema, ensureMissionsTable } = require("./migrate");
 const authRoutes = require("./auth");
 
 const app = express();
@@ -39,7 +40,19 @@ app.get("/health", async (_req, res) => {
 
 app.use("/auth", authRoutes);
 
-app.listen(port, () => {
+async function start() {
+  await ensureUserRegistrationSchema();
+  await ensureMissionsTable();
   // eslint-disable-next-line no-console
-  console.log(`Auth backend running on http://localhost:${port}`);
+  console.log("Database schema (users + missions) is up to date.");
+  app.listen(port, () => {
+    // eslint-disable-next-line no-console
+    console.log(`Auth backend running on http://localhost:${port}`);
+  });
+}
+
+start().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });

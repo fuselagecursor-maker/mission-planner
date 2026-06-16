@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/auth/auth_session.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/ui/app_spacing.dart';
 import '../../data/auth_api.dart';
@@ -49,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('Backend did not return token/user.');
       }
 
+      AuthSession.instance.setSession(token, user);
       Navigator.of(context).pushReplacementNamed(AppRoutes.shell);
     } catch (e) {
       if (!mounted) return;

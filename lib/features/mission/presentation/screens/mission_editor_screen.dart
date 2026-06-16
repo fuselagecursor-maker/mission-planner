@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../../core/ui/app_spacing.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/status_pill.dart';
+import '../../domain/agri_waypoint_kind.dart';
+import '../models/mission_waypoint_editor_values.dart';
 import '../models/waypoint_vm.dart';
 import '../widgets/mission_storage_dialogs.dart';
 import '../widgets/waypoint_property_sheet.dart';
@@ -26,38 +29,18 @@ class _MissionEditorScreenState extends State<MissionEditorScreen> {
   final _name = TextEditingController(text: 'Mission (placeholder)');
   final _desc = TextEditingController(text: 'Objective / constraints (placeholder)');
 
-  bool _airspaceViolation = true;
   bool _powerFeasible = true;
 
-  final List<WaypointVm> _waypoints = [
-    const WaypointVm(
-      id: 'wp_1',
-      label: 'Waypoint 1',
-      lat: null,
-      lng: null,
-      altMeters: null,
-      speedMps: null,
-      action: 'Navigate',
-    ),
-    const WaypointVm(
-      id: 'wp_2',
-      label: 'Waypoint 2',
-      lat: null,
-      lng: null,
-      altMeters: null,
-      speedMps: null,
-      action: 'Loiter',
-    ),
-    const WaypointVm(
-      id: 'wp_3',
-      label: 'Waypoint 3',
-      lat: null,
-      lng: null,
-      altMeters: null,
-      speedMps: null,
-      action: 'Navigate',
-    ),
-  ];
+  final List<WaypointVm> _waypoints = [];
+
+  String _editorMarkerLabel(int i) {
+    final w = _waypoints[i];
+    var c = 0;
+    for (var j = 0; j <= i; j++) {
+      if (_waypoints[j].kind == w.kind) c++;
+    }
+    return '${w.kind.markerPrefix()}$c';
+  }
 
   @override
   void dispose() {
@@ -69,7 +52,7 @@ class _MissionEditorScreenState extends State<MissionEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final canExecute = !_airspaceViolation && _powerFeasible;
+    final canExecute = _powerFeasible;
 
     return Scaffold(
       appBar: AppBar(
@@ -126,30 +109,18 @@ class _MissionEditorScreenState extends State<MissionEditorScreen> {
                       runSpacing: AppSpacing.sm,
                       children: [
                         StatusPill(
-                          label: _airspaceViolation ? 'Airspace: VIOLATION' : 'Airspace: CLEAR',
-                          color: _airspaceViolation ? scheme.error : scheme.tertiary,
+                          label: 'Points: ${_waypoints.length}',
+                          color: scheme.outline,
                         ),
                         StatusPill(
                           label: _powerFeasible ? 'Power: FEASIBLE' : 'Power: INSUFFICIENT',
                           color: _powerFeasible ? scheme.tertiary : scheme.error,
-                        ),
-                        StatusPill(
-                          label: 'Waypoints: ${_waypoints.length}',
-                          color: scheme.outline,
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Row(
                       children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => setState(() => _airspaceViolation = !_airspaceViolation),
-                            icon: const Icon(Icons.public_outlined),
-                            label: const Text('Toggle airspace (demo)'),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () => setState(() => _powerFeasible = !_powerFeasible),
@@ -173,53 +144,94 @@ class _MissionEditorScreenState extends State<MissionEditorScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Card(
-              child: ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                itemCount: _waypoints.length,
-                onReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    if (newIndex > oldIndex) newIndex -= 1;
-                    final item = _waypoints.removeAt(oldIndex);
-                    _waypoints.insert(newIndex, item);
-                  });
-                },
-                itemBuilder: (context, i) {
-                  final w = _waypoints[i];
-                  return ListTile(
-                    key: ValueKey(w.id),
-                    leading: ReorderableDragStartListener(
-                      index: i,
-                      child: const Icon(Icons.drag_indicator),
-                    ),
-                    title: Text(w.label),
-                    subtitle: Text('Action: ${w.action} • Alt: -- • Spd: --'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () {
-                        showModalBottomSheet<void>(
-                          context: context,
-                          showDragHandle: true,
-                          isScrollControlled: true,
-                          builder: (ctx) => FractionallySizedBox(
-                            heightFactor: 0.6,
-                            child: WaypointPropertySheet(
-                              waypointTitle: w.label,
-                              onClose: () => Navigator.of(ctx).pop(),
+              child: _waypoints.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(
+                        'No points yet. Add boundary corners (land plot) or route points from the map, '
+                        'or tap “Add waypoint” to seed from your current GPS position.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
                             ),
+                      ),
+                    )
+                  : ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      buildDefaultDragHandles: false,
+                      itemCount: _waypoints.length,
+                      onReorder: (oldIndex, newIndex) {
+                        setState(() {
+                          if (newIndex > oldIndex) newIndex -= 1;
+                          final item = _waypoints.removeAt(oldIndex);
+                          _waypoints.insert(newIndex, item);
+                        });
+                      },
+                      itemBuilder: (context, i) {
+                        final w = _waypoints[i];
+                        return ListTile(
+                          key: ValueKey(w.id),
+                          leading: ReorderableDragStartListener(
+                            index: i,
+                            child: const Icon(Icons.drag_indicator),
                           ),
+                          title: Text(_editorMarkerLabel(i)),
+                          subtitle: Text(
+                            '${w.kind.title()} • ${w.action} • '
+                            'Alt: ${w.altMeters?.toStringAsFixed(0) ?? '—'} • '
+                            'Spd: ${w.speedMps?.toStringAsFixed(1) ?? '—'}',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () {
+                              showModalBottomSheet<void>(
+                                context: context,
+                                showDragHandle: true,
+                                isScrollControlled: true,
+                                builder: (ctx) => FractionallySizedBox(
+                                  heightFactor: 0.78,
+                                  child: WaypointPropertySheet(
+                                    waypointTitle: '${_editorMarkerLabel(i)} — ${w.kind.title()}',
+                                    initial: MissionWaypointEditorValues(
+                                      latitude: w.lat ?? 0,
+                                      longitude: w.lng ?? 0,
+                                      altitudeM: w.altMeters,
+                                      speedMps: w.speedMps,
+                                      holdSeconds: w.holdSeconds,
+                                      action: w.action,
+                                      kind: w.kind,
+                                    ),
+                                    showKindPicker: true,
+                                    onApply: (v) {
+                                      setState(() {
+                                        _waypoints[i] = _waypoints[i].copyWith(
+                                          lat: v.latitude,
+                                          lng: v.longitude,
+                                          altMeters: v.altitudeM,
+                                          speedMps: v.speedMps,
+                                          holdSeconds: v.holdSeconds,
+                                          action: v.action,
+                                          kind: v.kind,
+                                        );
+                                      });
+                                    },
+                                    onClose: () => Navigator.of(ctx).pop(),
+                                    onDelete: () {
+                                      setState(() => _waypoints.removeAt(i));
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Focus ${_editorMarkerLabel(i)} on map (placeholder)')),
+                            );
+                          },
                         );
                       },
                     ),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Focus ${w.label} on map (placeholder)')),
-                      );
-                    },
-                  );
-                },
-              ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -229,20 +241,45 @@ class _MissionEditorScreenState extends State<MissionEditorScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _waypoints.add(
-                          WaypointVm(
-                            id: 'wp_${_waypoints.length + 1}',
-                            label: 'Waypoint ${_waypoints.length + 1}',
-                            lat: null,
-                            lng: null,
-                            altMeters: null,
-                            speedMps: null,
-                            action: 'Navigate',
-                          ),
+                    onPressed: () async {
+                      try {
+                        var perm = await Geolocator.checkPermission();
+                        if (perm == LocationPermission.denied) {
+                          perm = await Geolocator.requestPermission();
+                        }
+                        if (perm == LocationPermission.denied ||
+                            perm == LocationPermission.deniedForever) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Location permission is required to add a point here.')),
+                          );
+                          return;
+                        }
+                        final fix = await Geolocator.getLastKnownPosition() ??
+                            await Geolocator.getCurrentPosition(
+                              locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+                            );
+                        if (!context.mounted) return;
+                        setState(() {
+                          _waypoints.add(
+                            WaypointVm(
+                              id: 'wp_${DateTime.now().microsecondsSinceEpoch}',
+                              label: '',
+                              lat: fix.latitude,
+                              lng: fix.longitude,
+                              altMeters: null,
+                              speedMps: null,
+                              action: 'Navigate',
+                              kind: AgriWaypointKind.fieldBoundary,
+                            ),
+                          );
+                        });
+                      } catch (_) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Could not read GPS. Try again or add points on the map.')),
                         );
-                      });
+                      }
                     },
                     icon: const Icon(Icons.add),
                     label: const Text('Add waypoint'),

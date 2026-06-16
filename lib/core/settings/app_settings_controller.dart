@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppSettingsController extends ChangeNotifier {
   static const _usePhoneGpsKey = 'use_phone_gps';
 
-  bool _usePhoneGps = false;
+  /// Default on so the GCS map can follow the device without an extra toggle trip.
+  bool _usePhoneGps = true;
 
   bool get usePhoneGps => _usePhoneGps;
 
@@ -23,7 +24,7 @@ class AppSettingsController extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final v = prefs.getBool(_usePhoneGpsKey);
-      if (v != null && v != _usePhoneGps) {
+      if (v != null) {
         _usePhoneGps = v;
         notifyListeners();
       }
